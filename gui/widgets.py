@@ -240,13 +240,13 @@ class MainPage(ctk.CTkFrame):
                 pass # NOTE: wait until the user has let go of the slider
             if label == "Lift-off Distance":
                 #self.properties.set.lift_off_dist(value)
-                pass
+                pass # NOTE: wait until the user has let go of the slider
             if label == "Debounce Time":
                 #self.properties.set.debounce_time(value)
-                pass
+                pass # NOTE: wait until the user has let go of the slider
             if label == "Polling Rate":
                 #self.properties.set.polling_rate(value)
-                pass
+                pass # NOTE: wait until the user has let go of the slider
 
         def entry_update(event):
             try:
@@ -296,7 +296,7 @@ class MainPage(ctk.CTkFrame):
         self.fw_window.geometry("300x200")
         self.fw_window.minsize(300,200)
         self.fw_window.maxsize(300,200)
-        self.fw_window.attributes("-topmost", True) # Keep on top
+        self.fw_window.attributes("-topmost", True)
 
         container = ctk.CTkFrame(self.fw_window, corner_radius=10)
         container.pack(fill="both", expand=True, padx=10, pady=10)
@@ -317,8 +317,7 @@ class MainPage(ctk.CTkFrame):
         ctk.CTkLabel(info_grid, text="Sensor:", text_color="gray").grid(row=2, column=0, sticky="e", padx=5, pady=5)
         ctk.CTkLabel(info_grid, text="PAW3395").grid(row=2, column=1, sticky="w", padx=5, pady=5)
 
-
-
 from os import system
+
 if __name__ == "__main__":
     system("python -u '/home/tocom/Documents/Python Stuff/MouseReverseEngineering/gui/app.py'")
