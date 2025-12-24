@@ -9,29 +9,31 @@ if not device:
 
 properties = mouse_hid.properties(device, 1)
 
-#properties.set.dpi_stage(2)
-#properties.set.dongle_LED(0)
 
-dpi_stage = properties.get.dpi_stage()[1] - 1
-time.sleep(0.1)
+properties.set.dpi_stage(1)
+time.sleep(0.03)
 data = {
     "Angle Snap"        : lambda: properties.get.angle_snap()[1],
     "Motion Sync"       : lambda: properties.get.motion_sync()[1],
     "Ripple Control"    : lambda: properties.get.ripple_control()[1],
     "Dongle LED"        : lambda: properties.get.dongle_LED()[1],
-    "DPI Level"         : lambda: properties.get.dpi_stage_info()[1][dpi_stage],
+    "DPI Level"         : lambda: properties.get.dpi_stage_info(6)[1][0],
     "Polling Rate"      : lambda: properties.get.polling_rate()[1],
     "Debounce Time"     : lambda: properties.get.debounce_time()[1],
     "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
-    "Sleep Timer"       : lambda: properties.get.sleep_time()[1]
+    "Sleep Timer"       : lambda: properties.get.sleep_time()[1],
+
+    "DPI Stage"         : 1
 }
 
-print("Starting")
-
+i = 0
 for key, value in data.items():
+    if i == 9:
+        break
+
     data[key] = value()
-    print(key, data[key])
-    time.sleep(0.1)
+    time.sleep(0.01)
+    i += 1
 
 
 

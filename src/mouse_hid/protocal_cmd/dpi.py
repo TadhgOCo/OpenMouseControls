@@ -12,8 +12,10 @@ def set_dpi_stage_info(stage_count, dpi_value, profileID):
     [6-9] DPI Data (X High, X Low, Y High, Y Low) - Big Endian [cite: 240]
     """
     
-    idx_1 = 256%dpi_value
+    idx_1 = dpi_value % 256
     dpi_bytes = [int( (dpi_value-idx_1)/256 ), idx_1]
+
+    print(dpi_bytes)
 
     buf = bytearray(65)
     

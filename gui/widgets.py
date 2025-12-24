@@ -3,6 +3,7 @@ import customtkinter as ctk
 from PIL import Image
 import threading
 import time
+from tkinter import Event
 
 def cheack_connected(ConnectingThread : threading.Thread):
     if ConnectingThread.is_alive():
@@ -83,26 +84,30 @@ class SplashScreen(ctk.CTkFrame):
             self.after(interval, lambda: self.spin_wait(setup=True))
 
     def get_startup_data(self, properties : mouse_hid.properties):
-        dpi_stage = properties.get.dpi_stage()[1] - 1
-        time.sleep(0.01)
+        properties.set.dpi_stage(1)
+        time.sleep(0.03)
         data = {
             "Angle Snap"        : lambda: properties.get.angle_snap()[1],
             "Motion Sync"       : lambda: properties.get.motion_sync()[1],
             "Ripple Control"    : lambda: properties.get.ripple_control()[1],
             "Dongle LED"        : lambda: properties.get.dongle_LED()[1],
-            "DPI Level"         : lambda: properties.get.dpi_stage_info()[1][dpi_stage],
+            "DPI Level"         : lambda: properties.get.dpi_stage_info(6)[1][0],
             "Polling Rate"      : lambda: properties.get.polling_rate()[1],
             "Debounce Time"     : lambda: properties.get.debounce_time()[1],
             "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
-            "Sleep Timer"       : lambda: properties.get.sleep_time()[1]
+            "Sleep Timer"       : lambda: properties.get.sleep_time()[1],
+
+            "DPI Stage"         : 1
         }
 
-        print("Starting")
-
+        i = 0
         for key, value in data.items():
+            if i == 9:
+                break
+
             data[key] = value()
-            print(key, data[key])
             time.sleep(0.01)
+            i += 1
 
         self.callback(properties, data)
 
@@ -235,23 +240,10 @@ class MainPage(ctk.CTkFrame):
             else:
                 entry.insert(0, f"{EntryValue:.1f}")
 
-            if label == "DPI Level":
-                #self.properties.set.dpi_stage_info(3, value)
-                pass # NOTE: wait until the user has let go of the slider
-            if label == "Lift-off Distance":
-                #self.properties.set.lift_off_dist(value)
-                pass # NOTE: wait until the user has let go of the slider
-            if label == "Debounce Time":
-                #self.properties.set.debounce_time(value)
-                pass # NOTE: wait until the user has let go of the slider
-            if label == "Polling Rate":
-                #self.properties.set.polling_rate(value)
-                pass # NOTE: wait until the user has let go of the slider
-            if label == "Sleep Timer":
-                #self.properties.set.sleep_time(value)
-                pass # NOTE: wait until the user has let go of the slider
+        def entry_update(label, EvType, event):
+            if EvType == "Return":
+                slider_send_data(label, slider.get())
 
-        def entry_update(label, event):
             try:
                 Entryvalue = float(entry.get())
                 value = Entryvalue
@@ -288,9 +280,30 @@ class MainPage(ctk.CTkFrame):
             except ValueError:
                 pass
 
+        def slider_send_data(label, value):
+            value = int(value)
+
+            if label == "DPI Level":
+                self.properties.set.dpi_stage_info(1, value)
+
+            if label == "Lift-off Distance":
+                #self.properties.set.lift_off_dist(value) # NOTE: Need to observe source code
+                pass
+
+            if label == "Debounce Time":
+                self.properties.set.debounce_time(value)
+
+            if label == "Polling Rate":
+                self.properties.set.polling_rate(value)
+
+            if label == "Sleep Timer":
+                self.properties.set.sleep_time(value)
+
+
         slider.configure(command= lambda value: slider_update(label, value))
-        entry.bind("<Return>",    lambda event: entry_update(label, event))
-        entry.bind("<FocusOut>",  lambda event: entry_update(label, event))
+        slider.bind("<ButtonRelease-1>", lambda event: slider_send_data(label, slider.get()))
+        entry.bind("<Return>",    lambda event: entry_update(label, "Return", event))
+        entry.bind("<FocusOut>",  lambda event: entry_update(label, "Focus", event))
 
     def update_app_state(self, data):
         self.app.IsAngleSnap = self.angle_snap.get()
