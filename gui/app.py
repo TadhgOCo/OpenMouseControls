@@ -57,8 +57,3 @@ if __name__ == "__main__":
 #    print(out)
 #finally:
 #    dev.close()
-
-
-
-app = App()
-app.mainloop()

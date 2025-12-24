@@ -12,14 +12,93 @@ properties = mouse_hid.properties(device, 1)
 #properties.set.dpi_stage(2)
 #properties.set.dongle_LED(0)
 
+dpi_stage = properties.get.dpi_stage()[1] - 1
+time.sleep(0.1)
+data = {
+    "Angle Snap"        : lambda: properties.get.angle_snap()[1],
+    "Motion Sync"       : lambda: properties.get.motion_sync()[1],
+    "Ripple Control"    : lambda: properties.get.ripple_control()[1],
+    "Dongle LED"        : lambda: properties.get.dongle_LED()[1],
+    "DPI Level"         : lambda: properties.get.dpi_stage_info()[1][dpi_stage],
+    "Polling Rate"      : lambda: properties.get.polling_rate()[1],
+    "Debounce Time"     : lambda: properties.get.debounce_time()[1],
+    "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
+    "Sleep Timer"       : lambda: properties.get.sleep_time()[1]
+}
+
+print("Starting")
+
+for key, value in data.items():
+    data[key] = value()
+    print(key, data[key])
+    time.sleep(0.1)
+
+
+
+exit(0)
 while True:
     #_, stage = properties.get.dpi_stage()
     #_, stages = properties.get.dpi_stage_info()
     #print(stages[stage-1])
 
-    print(properties.get.motion_sync())
-    print(properties.get.angle_snap())
-    print(properties.get.ripple_control())
-    print(properties.get.dongle_LED())
+    #print(properties.get.motion_sync())
+    #print(properties.get.angle_snap())
+    #print(properties.get.ripple_control())
+    #print(properties.get.dongle_LED())
+
+    #print(properties.get.polling_rate())
 
     time.sleep(1)
+
+# Widgets.py
+"""
+Searching for device...
+Found device: R6 Mouse 2.4G (0x373e:0x22)
+Success: Device acknowledged command (0xA1).
+Starting
+Success: Device acknowledged command (0xA1).
+Angle Snap 0
+Success: Device acknowledged command (0xA1).
+Motion Sync 0
+Success: Device acknowledged command (0xA1).
+Ripple Control 0
+Success: Device acknowledged command (0xA1).
+Dongle LED 0
+Success: Device acknowledged command (0xA1).
+DPI Level 2400
+Success: Device acknowledged command (0xA1).
+Polling Rate 500
+Success: Device acknowledged command (0xA1).
+Debounce Time 3
+Success: Device acknowledged command (0xA1).
+Lift-off Distance 1
+Success: Device acknowledged command (0xA1).
+Sleep Timer 15
+Success: Device acknowledged command (0xA1).
+"""
+
+# This Script
+"""
+Searching for device...
+Found device: R6 Mouse 2.4G (0x373e:0x22)
+Success: Device acknowledged command (0xA1).
+Starting
+Success: Device acknowledged command (0xA1).
+Angle Snap 0
+Success: Device acknowledged command (0xA1).
+Motion Sync 0
+Success: Device acknowledged command (0xA1).
+Ripple Control 0
+Success: Device acknowledged command (0xA1).
+Dongle LED 0
+Success: Device acknowledged command (0xA1).
+DPI Level 1600
+Success: Device acknowledged command (0xA1).
+Polling Rate 1000
+Success: Device acknowledged command (0xA1).
+Debounce Time 1
+Success: Device acknowledged command (0xA1).
+Lift-off Distance 135
+Success: Device acknowledged command (0xA1).
+Sleep Timer 167
+"""

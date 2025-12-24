@@ -18,14 +18,12 @@ class SplashScreen(ctk.CTkFrame):
         self.DeviceConnected = ctk.BooleanVar(value=False)
         self.callback = callback
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure((0, 4), weight=1) # Center vertical content
+        self.grid_rowconfigure((0, 4), weight=1)
 
-        # 1. Welcome Text
         ctk.CTkLabel(self, text="Welcome", font=("Roboto", 24, "bold"))\
             .grid(row=1, column=0, pady=(0, 20))
 
-        # 2. The "Image" (Button)
-        # In a real app, use ctk.CTkImage here. Using a button to simulate click.
+        # ctk.CTkImage
         self.img_btn = ctk.CTkButton(
             self, 
             text="[ Click Mouse Image ]", 
@@ -38,17 +36,15 @@ class SplashScreen(ctk.CTkFrame):
         )
         self.img_btn.grid(row=2, column=0, pady=20)
 
-        # 3. Loading Bar (Hidden initially)
         self.progress = ctk.CTkProgressBar(self, width=200, mode="indeterminate")
         self.progress.grid(row=3, column=0, pady=20)
-        self.progress.grid_remove() # Hide it
+        self.progress.grid_remove() # Hide loading bar
 
     def start_loading(self):
         self.img_btn.configure(state="disabled", text="Connecting...")
-        self.progress.grid() # Show bar
+        self.progress.grid() # Show loading bar
         self.progress.start()
         
-        # Wait 1 second (1000ms) then trigger callback
         self.spin_wait(interval=1000) 
 
     def spin_wait(self, interval=100, setup=False):
@@ -80,7 +76,7 @@ class SplashScreen(ctk.CTkFrame):
                 exit(1) # NOTE: Make Better
 
             self.DeviceConnected.set(True)
-            properties = mouse_hid.properties(device, 2)
+            properties = mouse_hid.properties(device, 1)
             self.get_startup_data(properties)
             return
         else:
@@ -88,17 +84,25 @@ class SplashScreen(ctk.CTkFrame):
 
     def get_startup_data(self, properties : mouse_hid.properties):
         dpi_stage = properties.get.dpi_stage()[1] - 1
+        time.sleep(0.01)
         data = {
-            "Angle Snap" : properties.get.angle_snap()[1],
-            "Motion Sync" : properties.get.motion_sync()[1],
-            "Ripple Control" : properties.get.ripple_control()[1],
-            "Dongle LED" : properties.get.dongle_LED()[1],
-            "DPI Level" : properties.get.dpi_stage_info()[1][dpi_stage],
-            "Polling Rate" : properties.get.polling_rate()[1],
-            "Debounce Time" : properties.get.debounce_time()[1],
-            "Lift-off Distance" : properties.get.lift_off_dist()[1],
-            "Sleep Timer" : properties.get.sleep_time()[1]
+            "Angle Snap"        : lambda: properties.get.angle_snap()[1],
+            "Motion Sync"       : lambda: properties.get.motion_sync()[1],
+            "Ripple Control"    : lambda: properties.get.ripple_control()[1],
+            "Dongle LED"        : lambda: properties.get.dongle_LED()[1],
+            "DPI Level"         : lambda: properties.get.dpi_stage_info()[1][dpi_stage],
+            "Polling Rate"      : lambda: properties.get.polling_rate()[1],
+            "Debounce Time"     : lambda: properties.get.debounce_time()[1],
+            "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
+            "Sleep Timer"       : lambda: properties.get.sleep_time()[1]
         }
+
+        print("Starting")
+
+        for key, value in data.items():
+            data[key] = value()
+            print(key, data[key])
+            time.sleep(0.01)
 
         self.callback(properties, data)
 
@@ -111,53 +115,51 @@ class MainPage(ctk.CTkFrame):
         self.data = data
         self.grid_columnconfigure(0, weight=1)
         
-        # --- Top Header (Battery & Info) ---
+        # Battery + Firmware Info
         self.create_header()
 
-        # --- Controls Container ---
+        # Controls
         self.controls = ctk.CTkFrame(self, corner_radius=12, fg_color="transparent")
         self.controls.grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         self.controls.grid_columnconfigure((0, 1), weight=1)
 
-        # --- Title ---
+        # Window title
         ctk.CTkLabel(
             self.controls,
             text="Mouse Settings",
             font=ctk.CTkFont(size=18, weight="bold")
         ).grid(row=0, column=0, columnspan=2, padx=10, pady=(0, 15), sticky="w")
 
-        # --- Checkboxes ---
         self.create_checkboxes()
 
-        # --- Sliders Frame ---
+        # Sliders frame
         self.slider_frame = ctk.CTkFrame(self.controls, corner_radius=10)
         self.slider_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
         self.slider_frame.grid_columnconfigure(0, weight=1)
 
-        # --- Create Sliders with Units ---
+        # Sliders
         self.create_slider(0, "DPI Level", 400, 42000, 50, "DPI")
         self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 1, "mm")
         self.create_slider(2, "Debounce Time", 0, 5, 1, "ms")
         self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz")
-        self.create_slider(4, "Sleep Timer", 1, 15, 1/60, "min")
+        self.create_slider(4, "Sleep Timer", 1, 900, 1, "min")
 
     def create_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
         header.grid(row=0, column=0, sticky="ew", padx=15, pady=(15, 5))
         header.grid_columnconfigure(0, weight=1)
 
-        # Battery Status (Left)
         battery_frame = ctk.CTkFrame(header, fg_color="#2B2B2B", corner_radius=8)
         battery_frame.grid(row=0, column=0, sticky="w")
         
-        # Battery Icon/Text
         _, Percentage, isCharging = self.properties.get.battery()
         ctk.CTkLabel(battery_frame, text=f"🔋 {Percentage}%").pack(side="left", padx=10, pady=5)
 
+        # If the battery is charging 
         if isCharging:
             ctk.CTkLabel(battery_frame, text="⚡ Charging", text_color="#4ade80", font=("Arial", 11)).pack(side="left", padx=(0, 10), pady=5)
 
-        # Firmware Info Button (Right)
+        # Firmware Button
         self.info_btn = ctk.CTkButton(
             header, 
             text="?", 
@@ -195,11 +197,9 @@ class MainPage(ctk.CTkFrame):
 
 
     def create_slider(self, row_idx, label, min_v, max_v, step, unit):
-        # Label Title
         ctk.CTkLabel(self.slider_frame, text=label)\
             .grid(row=row_idx*2, column=0, sticky="w", padx=15, pady=(10, 0))
 
-        # Container for Slider + Entry + Unit
         container = ctk.CTkFrame(self.slider_frame, fg_color="transparent")
         container.grid(row=row_idx*2+1, column=0, padx=10, pady=(0, 5), sticky="ew")
         container.grid_columnconfigure(0, weight=1)
@@ -214,26 +214,26 @@ class MainPage(ctk.CTkFrame):
             variable=var
         )
         slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-
-        # Entry Box
-        entry = ctk.CTkEntry(container, width=50, justify="center")
-        entry.insert(0, str(min_v))
-        entry.grid(row=0, column=1)
-
+        
         value = self.data[label]
         slider.set(value)
 
-        # Unit Label (Beside the slider/entry)
+        entry = ctk.CTkEntry(container, width=50, justify="center")
+        value = round(value/60) if label == "Sleep Timer" else value
+        entry.insert(0, str(value))
+        entry.grid(row=0, column=1)
+
+
         ctk.CTkLabel(container, text=unit, width=30, text_color="gray")\
             .grid(row=0, column=2, padx=(5, 0))
 
-        # --- Logic ---
         def slider_update(label, value):
             entry.delete(0, "end")
+            EntryValue = round(value/60) if label == "Sleep Timer" else value
             if isinstance(step, int) or step.is_integer():
-                entry.insert(0, int(value))
+                entry.insert(0, int(EntryValue))
             else:
-                entry.insert(0, f"{value:.1f}")
+                entry.insert(0, f"{EntryValue:.1f}")
 
             if label == "DPI Level":
                 #self.properties.set.dpi_stage_info(3, value)
@@ -247,18 +247,22 @@ class MainPage(ctk.CTkFrame):
             if label == "Polling Rate":
                 #self.properties.set.polling_rate(value)
                 pass # NOTE: wait until the user has let go of the slider
+            if label == "Sleep Timer":
+                #self.properties.set.sleep_time(value)
+                pass # NOTE: wait until the user has let go of the slider
 
-        def entry_update(event):
+        def entry_update(label, event):
             try:
                 value = float(entry.get())
+                value = round(value*60) if label == "Sleep Timer" else value
                 value = max(min_v, min(max_v, value))
                 slider.set(value)
             except ValueError:
                 pass
 
-        slider.configure(command=lambda value: slider_update(label, value))
-        entry.bind("<Return>", entry_update)
-        entry.bind("<FocusOut>", entry_update)
+        slider.configure(command= lambda value: slider_update(label, value))
+        entry.bind("<Return>",    lambda event: entry_update(label, event))
+        entry.bind("<FocusOut>",  lambda event: entry_update(label, event))
 
     def update_app_state(self, data):
         self.app.IsAngleSnap = self.angle_snap.get()
@@ -266,23 +270,17 @@ class MainPage(ctk.CTkFrame):
         self.app.IsRippleControl = self.ripple.get()
         self.app.IsDongleLED = self.dongle_led.get()
 
-        if data == "AngleSnap":
+        if data == "Angle Snap":
             self.properties.set.angle_snap(self.app.IsAngleSnap)
 
-        if data == "MotionSync":
+        if data == "Motion Sync":
             self.properties.set.motion_sync(self.app.IsMotionSync)
 
-        if data == "RippleControl":
+        if data == "Ripple Control":
             self.properties.set.ripple_control(self.app.IsRippleControl)
 
-        if data == "DongleLED":
+        if data == "Dongle LED":
             self.properties.set.dongle_LED(self.app.IsDongleLED)
-
-        if not self.verify_data_state():
-            pass
-
-    def verify_data_state(self):
-        return True
 
 
     def open_firmware_info(self):
@@ -313,9 +311,6 @@ class MainPage(ctk.CTkFrame):
         
         ctk.CTkLabel(info_grid, text="Dongle FW:", text_color="gray").grid(row=1, column=0, sticky="e", padx=5, pady=5)
         ctk.CTkLabel(info_grid, text="v1.2.0").grid(row=1, column=1, sticky="w", padx=5, pady=5)
-        
-        ctk.CTkLabel(info_grid, text="Sensor:", text_color="gray").grid(row=2, column=0, sticky="e", padx=5, pady=5)
-        ctk.CTkLabel(info_grid, text="PAW3395").grid(row=2, column=1, sticky="w", padx=5, pady=5)
 
 from os import system
 
