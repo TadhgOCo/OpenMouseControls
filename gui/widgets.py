@@ -138,10 +138,10 @@ class MainPage(ctk.CTkFrame):
         self.slider_frame.grid_columnconfigure(0, weight=1)
 
         # Sliders
-        self.create_slider(0, "DPI Level", 400, 42000, 50, "DPI")
-        self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 1, "mm")
+        self.create_slider(0, "DPI Level", 50, 42000, 50, "DPI")
+        self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 0.1, "mm") # NOTE: Change to a combobox
         self.create_slider(2, "Debounce Time", 0, 5, 1, "ms")
-        self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz")
+        self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz") # NOTE: Change to a combobox
         self.create_slider(4, "Sleep Timer", 1, 900, 1, "min")
 
     def create_header(self):
@@ -253,9 +253,37 @@ class MainPage(ctk.CTkFrame):
 
         def entry_update(label, event):
             try:
-                value = float(entry.get())
-                value = round(value*60) if label == "Sleep Timer" else value
-                value = max(min_v, min(max_v, value))
+                Entryvalue = float(entry.get())
+                value = Entryvalue
+
+                if label == "DPI Level":
+                    Entryvalue = max(50, min(42000, Entryvalue))
+                    Entryvalue = round(Entryvalue)
+                    value = round(Entryvalue)
+
+                if label == "Lift-off Distance":
+                    Entryvalue = max(0.7, min(2.5, Entryvalue))
+                    Entryvalue = round(Entryvalue, 1)
+                    value = round(Entryvalue)
+
+                if label == "Debounce Time":
+                    Entryvalue = max(1, min(5, Entryvalue))
+                    Entryvalue = round(Entryvalue)
+                    value = round(Entryvalue)
+
+                if label == "Polling Rate":
+                    Entryvalue = max(125, min(8000, Entryvalue))
+                    Entryvalue = round(Entryvalue)
+                    value = round(Entryvalue)
+
+                if label == "Sleep Timer":
+                    Entryvalue = max(1, min(15, Entryvalue))
+                    Entryvalue = round(Entryvalue)
+                    value = round(Entryvalue*60)
+
+                entry.delete(0, "end")
+                entry.insert(0, f"{Entryvalue}")
+
                 slider.set(value)
             except ValueError:
                 pass
