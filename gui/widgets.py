@@ -84,8 +84,11 @@ class SplashScreen(ctk.CTkFrame):
             self.after(interval, lambda: self.spin_wait(setup=True))
 
     def get_startup_data(self, properties : mouse_hid.properties):
-        properties.set.dpi_stage(1)
-        time.sleep(0.03)
+        dpi_stage = properties.get.dpi_stage()[1]
+        if dpi_stage != 1:
+            properties.set.dpi_stage(1)
+            time.sleep(0.03)
+
         data = {
             "Angle Snap"        : lambda: properties.get.angle_snap()[1],
             "Motion Sync"       : lambda: properties.get.motion_sync()[1],

@@ -2,6 +2,8 @@ import mouse_hid.protocal_cmd as protocal_cmd
 import time
 import hid
 
+DEBUG = True
+
 def send_command(device : hid.Device, packet):
     device.send_feature_report(packet)
     time.sleep(0.03)
@@ -25,7 +27,8 @@ def send_command(device : hid.Device, packet):
                 break
 
     if response and (response[0] == 0xA1 or response[1] == 0xA1):
-        print("Success: Device acknowledged command (0xA1).")
+        if DEBUG == True:
+            print("Success: Device acknowledged command (0xA1).")
         Success = True
     else:
         print(f"Warning: Device did not return success code. Raw: {response[:5]}")
@@ -35,7 +38,11 @@ def send_command(device : hid.Device, packet):
 
 
 class properties:
-    def __init__(self, dev : hid.Device, profileID : int = -1):
+    def __init__(self, dev : hid.Device, profileID : int = -1, debug=False):
+        global DEBUG
+
+        DEBUG = debug
+
         if profileID != -1:
             profileID = min(max(profileID, 1), 3)
 
@@ -61,7 +68,6 @@ class GET:
         Success, response = send_command(self.device, protocal_cmd.get_debounce(self.profileID))
 
         DebounceTime = response[7]
-        print(list(response))
 
         return Success, DebounceTime
     
