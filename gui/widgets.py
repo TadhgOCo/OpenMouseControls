@@ -145,7 +145,7 @@ class MainPage(ctk.CTkFrame):
         # Sliders
         self.create_slider(0, "DPI Level", 50, 42000, 50, "DPI")
         self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 0.1, "mm") # NOTE: Change to a combobox
-        self.create_slider(2, "Debounce Time", 0, 5, 1, "ms")
+        self.create_slider(2, "Debounce Time", 0, 15, 1, "ms")
         self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz") # NOTE: Change to a combobox
         self.create_slider(4, "Sleep Timer", 1, 900, 1, "min")
 
@@ -254,12 +254,12 @@ class MainPage(ctk.CTkFrame):
                     value = round(Entryvalue)
 
                 if label == "Lift-off Distance":
-                    Entryvalue = max(0.7, min(2.5, Entryvalue))
+                    Entryvalue = max(0.7, min(2, Entryvalue))
                     Entryvalue = round(Entryvalue, 1)
                     value = round(Entryvalue)
 
                 if label == "Debounce Time":
-                    Entryvalue = max(1, min(5, Entryvalue))
+                    Entryvalue = max(0, min(15, Entryvalue))
                     Entryvalue = round(Entryvalue)
                     value = round(Entryvalue)
 

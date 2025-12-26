@@ -9,7 +9,11 @@ if not device:
 
 properties = mouse_hid.properties(device, 1)
 
+properties.set.debounce_time(3)
+print(properties.get.debounce_time())
 
+
+exit(0)
 properties.set.dpi_stage(1)
 time.sleep(0.03)
 data = {
@@ -37,7 +41,6 @@ for key, value in data.items():
 
 
 
-exit(0)
 while True:
     #_, stage = properties.get.dpi_stage()
     #_, stages = properties.get.dpi_stage_info()

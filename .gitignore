@@ -219,4 +219,5 @@ old/
 
 # Misc
 misc/
+mousectl.py
 >>>>>>> 008aa1b (Initial commit: HID mouse control and some GUI elements)

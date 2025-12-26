@@ -61,6 +61,8 @@ class GET:
         Success, response = send_command(self.device, protocal_cmd.get_debounce(self.profileID))
 
         DebounceTime = response[7]
+        print(list(response))
+
         return Success, DebounceTime
     
     def dongle_LED(self):
@@ -119,6 +121,9 @@ class GET:
             dist = response[6]
         else:
             dist = response[7]
+
+        if dist == 0x87:
+            dist = 0.7
 
         return Success, dist
     
@@ -223,7 +228,11 @@ class SET:
 
         return Success
     
-    def lift_off_dist(self, dist): # NOTE: need to see whats going on here
+    def lift_off_dist(self, dist):
+
+        if dist == 0.7:
+            dist = 0x87
+
         Success, _ = send_command(self.device, protocal_cmd.set_lift_off(self.profileID, dist))
 
         return Success
