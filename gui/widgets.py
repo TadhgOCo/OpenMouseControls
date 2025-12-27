@@ -1,9 +1,7 @@
-import mouse_hid
 import customtkinter as ctk
-from PIL import Image
+import mouse_hid
 import threading
 import time
-from tkinter import Event
 
 def cheack_connected(ConnectingThread : threading.Thread):
     if ConnectingThread.is_alive():
