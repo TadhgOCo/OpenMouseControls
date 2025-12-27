@@ -12,7 +12,7 @@ def reset_profile(profile_id):
 	buf = bytearray(65)
 
 	buf[3] = 0x02
-	buf[4] = 0x02
+	buf[4] = 0x01
 	buf[6] = 0x0D
 	buf[7] = profile_id
 

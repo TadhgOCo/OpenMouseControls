@@ -77,13 +77,14 @@ class SplashScreen(ctk.CTkFrame):
                 exit(1) # NOTE: Make Better
 
             self.DeviceConnected.set(True)
-            properties = mouse_hid.properties(device, 1)
+            properties = mouse_hid.properties(device, 1, debug=True)
             self.get_startup_data(properties)
             return
         else:
             self.after(interval, lambda: self.spin_wait(setup=True))
 
     def get_startup_data(self, properties : mouse_hid.properties):
+        print("DPI START")
         dpi_stage = properties.get.dpi_stage()[1]
         if dpi_stage != 1:
             properties.set.dpi_stage(1)
@@ -108,6 +109,10 @@ class SplashScreen(ctk.CTkFrame):
             if i == 9:
                 break
 
+            if data[key] == None:
+                print("Somthing went very wrong")
+                exit(1)
+
             data[key] = value()
             time.sleep(0.01)
             i += 1
@@ -122,6 +127,7 @@ class MainPage(ctk.CTkFrame):
         self.properties = properties
         self.data = data
         self.grid_columnconfigure(0, weight=1)
+        self.ChangedSettings = {}
         
         # Battery + Firmware Info
         self.create_header()
@@ -148,8 +154,8 @@ class MainPage(ctk.CTkFrame):
         # Dropdowns
         PollingRateOptions = [str(opt) + " Hz" for opt in [125, 250, 500, 1000, 2000, 4000, 8000]]
         LiftOffDistOptions = [str(opt) + " mm" for opt in [0.7, 1, 2]]
-        self.create_dropdowns(0, "Polling Rate", PollingRateOptions) # Polling Rate
-        self.create_dropdowns(1, "Lift-off Distance", LiftOffDistOptions) # Lift-Off Dist
+        self.create_dropdowns(0, "Polling Rate", PollingRateOptions)
+        self.create_dropdowns(1, "Lift-off Distance", LiftOffDistOptions)
 
         # Sliders frame
         self.slider_frame = ctk.CTkFrame(self.controls, corner_radius=10)
@@ -158,10 +164,12 @@ class MainPage(ctk.CTkFrame):
 
         # Sliders
         self.create_slider(0, "DPI Level", 50, 42000, 50, "DPI")
-        #self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 0.1, "mm") # NOTE: Change to a combobox
         self.create_slider(2, "Debounce Time", 0, 15, 1, "ms")
-        #self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz") # NOTE: Change to a combobox
-        self.create_slider(3, "Sleep Timer", 1, 900, 1, "min")
+        self.create_slider(3, "Sleep Timer", 15, 900, 1, "min")
+
+        # Sync Button
+        self.sync_btn = ctk.CTkButton(self.controls, text="Settings Synced", width=200, height=40, corner_radius=10, command=self.sync_btn_pressed)
+        self.sync_btn.grid(row=7, column=0, columnspan=10, pady=(20, 0))
 
     def create_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -218,7 +226,11 @@ class MainPage(ctk.CTkFrame):
         ctk.CTkLabel(self.dropdown_frame, text=label)\
             .grid(row=0, column=col_idx*2, sticky="w", padx=(5, 15), pady=5)
         
-        combobox = ctk.CTkComboBox(self.dropdown_frame, values=options)
+        def dropdown_update(choice):
+            self.sync_btn.configure(text="Sync Settings")
+            self.ChangedSettings[label] = float(choice[:-3])
+        
+        combobox = ctk.CTkComboBox(self.dropdown_frame, values=options, command=dropdown_update)
         combobox.grid(row=1, column=col_idx*2, sticky="w", padx=(5, 15), pady=5)
 
         if label == "Lift-off Distance":
@@ -238,14 +250,11 @@ class MainPage(ctk.CTkFrame):
         container.grid(row=row_idx*2+1, column=0, padx=(5, 5), pady=(0, 5), sticky="ew")
         container.grid_columnconfigure(0, weight=1)
 
-        #var = ctk.DoubleVar(value=min_v)
-
         slider = ctk.CTkSlider(
             container,
             from_=min_v,
             to=max_v,
             number_of_steps=int((max_v - min_v) / step)
-            #variable=var
         )
         slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         
@@ -281,18 +290,8 @@ class MainPage(ctk.CTkFrame):
                     Entryvalue = round(Entryvalue)
                     value = round(Entryvalue)
 
-                if label == "Lift-off Distance":
-                    Entryvalue = max(0.7, min(2, Entryvalue))
-                    Entryvalue = round(Entryvalue, 1)
-                    value = round(Entryvalue)
-
                 if label == "Debounce Time":
                     Entryvalue = max(0, min(15, Entryvalue))
-                    Entryvalue = round(Entryvalue)
-                    value = round(Entryvalue)
-
-                if label == "Polling Rate":
-                    Entryvalue = max(125, min(8000, Entryvalue))
                     Entryvalue = round(Entryvalue)
                     value = round(Entryvalue)
 
@@ -311,21 +310,10 @@ class MainPage(ctk.CTkFrame):
         def slider_send_data(label, value):
             value = int(value)
 
-            if label == "DPI Level":
-                self.properties.set.dpi_stage_info(1, value)
+            print(value)
 
-            if label == "Lift-off Distance":
-                #self.properties.set.lift_off_dist(value)
-                pass
-
-            if label == "Debounce Time":
-                self.properties.set.debounce_time(value)
-
-            if label == "Polling Rate":
-                self.properties.set.polling_rate(value)
-
-            if label == "Sleep Timer":
-                self.properties.set.sleep_time(value)
+            self.sync_btn.configure(text="Sync Settings")
+            self.ChangedSettings[label] = value
 
 
         slider.configure(command= lambda value: slider_update(label, value))
@@ -333,26 +321,46 @@ class MainPage(ctk.CTkFrame):
         entry.bind("<Return>",    lambda event: entry_update(label, "Return", event))
         entry.bind("<FocusOut>",  lambda event: entry_update(label, "Focus", event))
 
-    def update_app_state(self, data):
+    def update_app_state(self, label):
         self.app.IsAngleSnap = self.angle_snap.get()
         self.app.IsMotionSync = self.motion_sync.get()
         self.app.IsRippleControl = self.ripple.get()
         self.app.IsDongleLED = self.dongle_led.get()
 
-        if data == "Angle Snap":
-            self.properties.set.angle_snap(self.app.IsAngleSnap)
+        get_values = {
+            "Angle Snap"     : self.app.IsAngleSnap,
+            "Motion Sync"    : self.app.IsMotionSync,
+            "Ripple Control" : self.app.IsRippleControl,
+            "Dongle LED"     : self.app.IsDongleLED
+        }
 
-        if data == "Motion Sync":
-            self.properties.set.motion_sync(self.app.IsMotionSync)
+        self.sync_btn.configure(text="Sync Settings")
+        self.ChangedSettings[label] = get_values[label]
 
-        if data == "Ripple Control":
-            self.properties.set.ripple_control(self.app.IsRippleControl)
+    def sync_btn_pressed(self):
 
-        if data == "Dongle LED":
-            self.properties.set.dongle_LED(self.app.IsDongleLED)
+        setting_map = {
+            "Angle Snap"        : self.properties.set.angle_snap,
+            "Motion Sync"       : self.properties.set.motion_sync,
+            "Ripple Control"    : self.properties.set.ripple_control,
+            "Dongle LED"        : self.properties.set.dongle_LED,
+            "DPI Level"         : lambda value: self.properties.set.dpi_stage_info(1, value),
+            "Polling Rate"      : self.properties.set.polling_rate,
+            "Debounce Time"     : self.properties.set.debounce_time,
+            "Lift-off Distance" : self.properties.set.lift_off_dist,
+            "Sleep Timer"       : self.properties.set.sleep_time
+        }
+
+        for setting_name, value in self.ChangedSettings.items():
+            setting = setting_map[setting_name]
+            setting(value)
+
+        self.ChangedSettings.clear()
+
+        self.sync_btn.configure(text="Settings Synced")
 
 
-    def open_firmware_info(self):
+    def open_firmware_info(self): # NOTE: properly Center these
         # Check if window already exists to prevent duplicates
         if hasattr(self, 'fw_window') and self.fw_window is not None and self.fw_window.winfo_exists():
             self.fw_window.lift()
@@ -360,9 +368,9 @@ class MainPage(ctk.CTkFrame):
 
         self.fw_window = ctk.CTkToplevel(self)
         self.fw_window.title("Device Info")
-        self.fw_window.geometry("300x200")
-        self.fw_window.minsize(300,200)
-        self.fw_window.maxsize(300,200)
+        self.fw_window.geometry("300x220")
+        self.fw_window.minsize(300,220)
+        self.fw_window.maxsize(300,220)
         self.fw_window.attributes("-topmost", True)
 
         container = ctk.CTkFrame(self.fw_window, corner_radius=10)
@@ -374,12 +382,25 @@ class MainPage(ctk.CTkFrame):
         # Grid for nice alignment
         info_grid = ctk.CTkFrame(container, fg_color="transparent")
         info_grid.pack(fill="x", padx=20)
+
+        Comaptibility_grid = ctk.CTkFrame(container, fg_color="transparent")
+        Comaptibility_grid.pack(fill="x", padx=20)
+
+        DevFirmwareVersion   = "v" + self.properties.get.dev_firmware_ver()[1]
+        DongleFirwareVersion = "v" + self.properties.get.dongle_firmware_ver()[1]
         
         ctk.CTkLabel(info_grid, text="Mouse FW:", text_color="gray").grid(row=0, column=0, sticky="e", padx=5, pady=5)
-        ctk.CTkLabel(info_grid, text="v1.0.4").grid(row=0, column=1, sticky="w", padx=5, pady=5)
+        ctk.CTkLabel(info_grid, text=DevFirmwareVersion).grid(row=0, column=1, sticky="w", padx=5, pady=5,)
         
         ctk.CTkLabel(info_grid, text="Dongle FW:", text_color="gray").grid(row=1, column=0, sticky="e", padx=5, pady=5)
-        ctk.CTkLabel(info_grid, text="v1.2.0").grid(row=1, column=1, sticky="w", padx=5, pady=5)
+        ctk.CTkLabel(info_grid, text=DongleFirwareVersion).grid(row=1, column=1, sticky="w", padx=5, pady=5)
+
+        if DevFirmwareVersion == DongleFirwareVersion:
+            Comaptibility_label = ctk.CTkLabel(Comaptibility_grid, text="Device and Dongle are fully Compatable", text_color="green", font=("Arial", 12, "bold"))
+        else:
+            Comaptibility_label = ctk.CTkLabel(Comaptibility_grid, text="Device and Dongle are\n NOT fully Compatable", text_color="red", font=("Arial", 12, "bold"))
+
+        Comaptibility_label.grid(row=0, column=0, sticky="ew", padx=5, pady=10)
 
 from os import system
 

@@ -4,35 +4,39 @@ import hid
 
 DEBUG = True
 
-def send_command(device : hid.Device, packet):
+def send_command(device : hid.Device, packet, NoGetFeature=False):
     device.send_feature_report(packet)
-    time.sleep(0.03)
-    response = device.get_feature_report(0x02, 65)
+    if NoGetFeature == False:
+        time.sleep(0.03)
+        response = device.get_feature_report(0x02, 65)
 
-    if response != 0xA1:
-        for _ in range(5):
-            if response[0] > 0xA1:
-                device.send_feature_report(packet)
-                time.sleep(0.03)
-                response = device.get_feature_report(0x02, 65)
-            else:
-                break
+        if response != 0xA1:
+            for _ in range(5):
+                if response[0] > 0xA1:
+                    device.send_feature_report(packet)
+                    time.sleep(0.03)
+                    response = device.get_feature_report(0x02, 65)
+                else:
+                    break
 
-        for _ in range(3):
-            if response[1] < 0xA1:
-                device.send_feature_report(packet)
-                time.sleep(0.03)
-                response = device.get_feature_report(0x02, 65)
-            else:
-                break
+            for _ in range(3):
+                if response[1] < 0xA1:
+                    device.send_feature_report(packet)
+                    time.sleep(0.03)
+                    response = device.get_feature_report(0x02, 65)
+                else:
+                    break
 
-    if response and (response[0] == 0xA1 or response[1] == 0xA1):
-        if DEBUG == True:
-            print("Success: Device acknowledged command (0xA1).")
-        Success = True
+        if response and (response[0] == 0xA1 or response[1] == 0xA1):
+            if DEBUG == True:
+                print("Success: Device acknowledged command (0xA1).")
+            Success = True
+        else:
+            print(f"Warning: Device did not return success code. Raw: {response[:5]}")
+            Success = False
+
     else:
-        print(f"Warning: Device did not return success code. Raw: {response[:5]}")
-        Success = False
+        Success, response = [True, []]
 
     return Success, response
 
@@ -238,6 +242,8 @@ class SET:
 
         if dist == 0.7:
             dist = 0x87
+        else:
+            dist = int(dist)
 
         Success, _ = send_command(self.device, protocal_cmd.set_lift_off(self.profileID, dist))
 
@@ -275,5 +281,15 @@ class SET:
     
     def sleep_time(self, Stime):
         Success, _ = send_command(self.device, protocal_cmd.set_sleep(Stime, self.profileID))
+
+        return Success
+    
+    def reset_profile(self):
+        Success, _ = send_command(self.device, protocal_cmd.reset_profile(self.profileID), NoGetFeature=True)
+
+        return Success
+    
+    def reset_defaults(self):
+        Success, _ = send_command(self.device, protocal_cmd.reset_defaults(), NoGetFeature=True)
 
         return Success

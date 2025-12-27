@@ -9,6 +9,14 @@ if not device:
 
 properties = mouse_hid.properties(device, 1)
 
+print(properties.get.dpi_stage())
+
+#print(properties.set.sleep_time(322))
+#print(properties.get.sleep_time())
+#time.sleep(5)
+properties.set.reset_profile()
+
+exit(0)
 properties.set.dpi_stage(1)
 time.sleep(0.03)
 data = {
