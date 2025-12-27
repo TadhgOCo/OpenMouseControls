@@ -140,17 +140,28 @@ class MainPage(ctk.CTkFrame):
 
         self.create_checkboxes()
 
+        # Dropdown frame
+        self.dropdown_frame = ctk.CTkFrame(self.controls, corner_radius=10)
+        self.dropdown_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.dropdown_frame.grid_columnconfigure(0, weight=1)
+
+        # Dropdowns
+        PollingRateOptions = [str(opt) + " Hz" for opt in [125, 250, 500, 1000, 2000, 4000, 8000]]
+        LiftOffDistOptions = [str(opt) + " mm" for opt in [0.7, 1, 2]]
+        self.create_dropdowns(0, "Polling Rate", PollingRateOptions) # Polling Rate
+        self.create_dropdowns(1, "Lift-off Distance", LiftOffDistOptions) # Lift-Off Dist
+
         # Sliders frame
         self.slider_frame = ctk.CTkFrame(self.controls, corner_radius=10)
-        self.slider_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.slider_frame.grid(row=5, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
         self.slider_frame.grid_columnconfigure(0, weight=1)
 
         # Sliders
         self.create_slider(0, "DPI Level", 50, 42000, 50, "DPI")
-        self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 0.1, "mm") # NOTE: Change to a combobox
+        #self.create_slider(1, "Lift-off Distance", 0.7, 2.5, 0.1, "mm") # NOTE: Change to a combobox
         self.create_slider(2, "Debounce Time", 0, 15, 1, "ms")
-        self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz") # NOTE: Change to a combobox
-        self.create_slider(4, "Sleep Timer", 1, 900, 1, "min")
+        #self.create_slider(3, "Polling Rate", 125, 8000, 125, "Hz") # NOTE: Change to a combobox
+        self.create_slider(3, "Sleep Timer", 1, 900, 1, "min")
 
     def create_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -203,23 +214,38 @@ class MainPage(ctk.CTkFrame):
         if self.data["Dongle LED"] == True:
             self.dongle_led.select()
 
+    def create_dropdowns(self, col_idx, label, options):
+        ctk.CTkLabel(self.dropdown_frame, text=label)\
+            .grid(row=0, column=col_idx*2, sticky="w", padx=(5, 15), pady=5)
+        
+        combobox = ctk.CTkComboBox(self.dropdown_frame, values=options)
+        combobox.grid(row=1, column=col_idx*2, sticky="w", padx=(5, 15), pady=5)
+
+        if label == "Lift-off Distance":
+            unit = " mm"
+        else:
+            unit = " Hz"
+        
+        value = self.data[label]
+        combobox.set(str(value) + unit)
+
 
     def create_slider(self, row_idx, label, min_v, max_v, step, unit):
         ctk.CTkLabel(self.slider_frame, text=label)\
-            .grid(row=row_idx*2, column=0, sticky="w", padx=15, pady=(10, 0))
+            .grid(row=row_idx*2, column=0, sticky="w", padx=(5, 10), pady=(5,0))
 
         container = ctk.CTkFrame(self.slider_frame, fg_color="transparent")
-        container.grid(row=row_idx*2+1, column=0, padx=10, pady=(0, 5), sticky="ew")
+        container.grid(row=row_idx*2+1, column=0, padx=(5, 5), pady=(0, 5), sticky="ew")
         container.grid_columnconfigure(0, weight=1)
 
-        var = ctk.DoubleVar(value=min_v)
+        #var = ctk.DoubleVar(value=min_v)
 
         slider = ctk.CTkSlider(
             container,
             from_=min_v,
             to=max_v,
-            number_of_steps=int((max_v - min_v) / step),
-            variable=var
+            number_of_steps=int((max_v - min_v) / step)
+            #variable=var
         )
         slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
         
@@ -232,8 +258,7 @@ class MainPage(ctk.CTkFrame):
         entry.grid(row=0, column=1)
 
 
-        ctk.CTkLabel(container, text=unit, width=30, text_color="gray")\
-            .grid(row=0, column=2, padx=(5, 0))
+        ctk.CTkLabel(container, text=unit, width=30, text_color="gray").grid(row=0, column=2, padx=(5, 0))
 
         def slider_update(label, value):
             entry.delete(0, "end")
@@ -290,7 +315,7 @@ class MainPage(ctk.CTkFrame):
                 self.properties.set.dpi_stage_info(1, value)
 
             if label == "Lift-off Distance":
-                #self.properties.set.lift_off_dist(value) # NOTE: Need to observe source code
+                #self.properties.set.lift_off_dist(value)
                 pass
 
             if label == "Debounce Time":

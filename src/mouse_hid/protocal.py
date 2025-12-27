@@ -85,7 +85,7 @@ class GET:
 
         return Success, percentage, isChrarging
     
-    def dpi_stage_info(self, StageNo=6): # NOTE: need to oberseve source code
+    def dpi_stage_info(self, StageNo=6):
         Success, response = send_command(self.device, protocal_cmd.get_dpi_stage_info(self.profileID, StageNo))
 
         DPI_list = []
