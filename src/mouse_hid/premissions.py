@@ -2,6 +2,7 @@ import subprocess
 import hid
 import os
 
+TARGET_VENDORS = [0x258A, 0x373E] 
 
 def install_perms():
     cwd = os.getcwd()
@@ -12,9 +13,6 @@ def install_perms():
         f"{cwd}/udev/install-udev.sh",
         cwd
     ])
-
-TARGET_VENDORS = [0x258A, 0x373E] 
-
 
 def check_perms():
     for d in hid.enumerate():

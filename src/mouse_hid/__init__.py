@@ -14,5 +14,5 @@ __all__ = [
     "properties",
     "MouseHIDError",
     "install_perms",
-    "check_perms",
+    "check_perms"
 ]

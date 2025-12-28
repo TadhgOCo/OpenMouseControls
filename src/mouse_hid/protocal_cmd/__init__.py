@@ -8,7 +8,7 @@ from .debounce import get_debounce, set_debounce
 from .dongle import set_dongle_LED, get_dongle_LED
 from .dpi import set_dpi_stage_info, get_dpi_stage, set_dpi_stage, get_dpi_stage_info
 from .firmware_version import get_dev_firmware_ver, get_dongle_firmware_ver
-from .button import get_button, set_button
+#from .button import get_button, set_button
 from .lift_off import get_lift_off, set_lift_off
 from .pid import get_device_pid
 from .motion_sync import set_motion_sync, get_motion_sync
