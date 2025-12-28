@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from PIL import Image
 import mouse_hid
 import threading
 import time
@@ -21,18 +22,26 @@ class SplashScreen(ctk.CTkFrame):
 
         ctk.CTkLabel(self, text="Welcome", font=("Roboto", 24, "bold"))\
             .grid(row=1, column=0, pady=(0, 20))
+        
+        img = Image.open("assets/mouse.png")
 
         # ctk.CTkImage
-        self.img_btn = ctk.CTkButton(
-            self, 
-            text="[ Click Mouse Image ]", 
-            height=150, 
-            width=200,
-            fg_color="#333333",
-            hover_color="#444444",
-            corner_radius=15,
-            command=self.start_loading
+        self.img = ctk.CTkImage(
+            light_image=img,
+            dark_image=img,
+            size=(183, 239),
         )
+
+        self.img_btn = ctk.CTkButton(
+            self,
+            image=self.img,
+            text="",
+            fg_color="transparent",
+            hover_color="#222222",
+            corner_radius=15,
+            command=self.start_loading,
+        )
+
         self.img_btn.grid(row=2, column=0, pady=20)
 
         self.progress = ctk.CTkProgressBar(self, width=200, mode="indeterminate")
@@ -40,7 +49,15 @@ class SplashScreen(ctk.CTkFrame):
         self.progress.grid_remove() # Hide loading bar
 
     def start_loading(self):
-        self.img_btn.configure(state="disabled", text="Connecting...")
+        self.img_btn.configure(
+            state="disabled",
+            image=None,
+            height=239,
+            width=183,
+            fg_color="#333333",
+            text="Connecting..."
+        )
+
         self.progress.grid() # Show loading bar
         self.progress.start()
         
