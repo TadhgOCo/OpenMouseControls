@@ -3,7 +3,8 @@ import argparse
 
 
 description = """
-Desciptyskjiopghndsjk
+A CLI tool designed to communicate with ATTACKSHARK Mice.
+For the list of compatable devices look at the README
 """
 
 PossiblePropertiesList = [
@@ -98,8 +99,8 @@ def main(args):
         "SetDpiStage": MouseProperties.set.dpi_stage,
         "GetDpiStage": MouseProperties.get.dpi_stage,
 
-        "SetDpiStageInfo": MouseProperties.set.dpi_stage_info,
-        "GetDpiStageInfo": MouseProperties.get.dpi_stage_info,
+        "SetDpiStageInfo": lambda value: MouseProperties.set.dpi_stage_info(6, value),
+        "GetDpiStageInfo": lambda : MouseProperties.get.dpi_stage_info(6),
 
         "GetDevFirmwareVer": MouseProperties.get.dev_firmware_ver,
         "GetDongleFirmwareVer": MouseProperties.get.dongle_firmware_ver,
@@ -135,15 +136,15 @@ def main(args):
 
     command = PropertiesDict[Property]
 
-    if "Get" in Property: # NOTE: need a proper solution for this
+    if "Get" in Property:
         out = command()
     else:
         out = command(value)
 
-    if type(out) == list:
-        print(f"Success: {out[0]}\nValue: {out[1]}\n")
+    if type(out) == tuple:
+        print(f"\nSuccess: {out[0]}\nValue: {out[1]}")
     else:
-        print(f"Success: {out}\n")
+        print(f"\nSuccess: {out}\n")
 
     device.close()
 
@@ -153,8 +154,10 @@ def cmdline_args():
     parser.add_argument("Property",
                    help=f"The Property you want to change, Possible Values Include: {PossibleProperties}")
     
+    
     parser.add_argument("--value", type=int, default=0,
-                   help="The value you want to change it to")
+                   help="The Value you want to change the Property to")
+    
     parser.add_argument("-v", "--verbose", type=int, default=0,
                    help="verbose output")
 
