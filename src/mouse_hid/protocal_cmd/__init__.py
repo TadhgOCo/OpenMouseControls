@@ -31,8 +31,6 @@ __all__ = [
     "get_dpi_stage_info",
     "get_dev_firmware_ver",
     "get_dongle_firmware_ver",
-    "get_button",
-    "set_button",
     "get_lift_off",
     "set_lift_off",
     "get_device_pid",
@@ -48,11 +46,5 @@ __all__ = [
     "get_ripple_contol",
     "set_ripple_contol",
     "get_sleep",
-    "set_sleep",
-    "",
-    "",
-    "",
-    "",
-    "",
-    ""
+    "set_sleep"
 ]
