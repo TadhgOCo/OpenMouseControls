@@ -329,30 +329,32 @@ class MainPage(ctk.CTkFrame):
         self.ChangedSettings[label] = get_values[label]
 
     def sync_btn_pressed(self):
-        self.sync_btn.configure(text="Syncing Settings...", state="disabled")
+        def assign_settings():
+            setting_map = {
+                "Angle Snap"        : self.properties.set.angle_snap,
+                "Motion Sync"       : self.properties.set.motion_sync,
+                "Ripple Control"    : self.properties.set.ripple_control,
+                "Dongle LED"        : self.properties.set.dongle_LED,
+                "DPI Level"         : lambda value: self.properties.set.dpi_stage_info(1, value),
+                "Polling Rate"      : self.properties.set.polling_rate,
+                "Debounce Time"     : self.properties.set.debounce_time,
+                "Lift-off Distance" : self.properties.set.lift_off_dist,
+                "Sleep Timer"       : self.properties.set.sleep_time
+            }
 
-        setting_map = {
-            "Angle Snap"        : self.properties.set.angle_snap,
-            "Motion Sync"       : self.properties.set.motion_sync,
-            "Ripple Control"    : self.properties.set.ripple_control,
-            "Dongle LED"        : self.properties.set.dongle_LED,
-            "DPI Level"         : lambda value: self.properties.set.dpi_stage_info(1, value),
-            "Polling Rate"      : self.properties.set.polling_rate,
-            "Debounce Time"     : self.properties.set.debounce_time,
-            "Lift-off Distance" : self.properties.set.lift_off_dist,
-            "Sleep Timer"       : self.properties.set.sleep_time
-        }
+            for setting_name, value in self.ChangedSettings.items():
+                setting = setting_map[setting_name]
+                setting(value)
 
-        for setting_name, value in self.ChangedSettings.items():
-            setting = setting_map[setting_name]
-            setting(value)
+            self.ChangedSettings.clear()
 
-        self.ChangedSettings.clear()
+        def refresh_screen():
+            time.sleep(0.1)
+            data = get_startup_data(self.properties)
+            self.refres_entrys(data)
 
-        time.sleep(0.1)
-        data = get_startup_data(self.properties)
-        self.refres_entrys(data)
-
+        self.after(0, assign_settings)
+        self.after(0, refresh_screen)
         self.sync_btn.configure(text="Settings Synced", state="disabled")
 
 
@@ -386,15 +388,15 @@ class MainPage(ctk.CTkFrame):
         values = list(self.slider_frame.children.values())[1:]
         for i in range(0, len(values), 2):
             label = values[i].cget("text")
-
-            if label == "Sleep Timer":
-                value = round(data[label]/60)
-            else:
-                value = data[label]
+            value = data[label]
 
             container = list(values[i+1].children.values())[1:]
             container[0].set(value) # Slider
             container[1].delete(0, "end") # Entry
+
+            if label == "Sleep Timer":
+                value = round(data[label]/60)
+
             container[1].insert(0, str(value))
 
     def open_firmware_info(self): # NOTE: properly Center these

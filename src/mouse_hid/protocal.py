@@ -16,6 +16,7 @@ def send_command(device : hid.Device, packet, NoGetFeature=False):
                     device.send_feature_report(packet)
                     time.sleep(0.03)
                     response = device.get_feature_report(0x02, 65)
+                    time.sleep(0.1)
                 else:
                     break
 
@@ -24,20 +25,22 @@ def send_command(device : hid.Device, packet, NoGetFeature=False):
                     device.send_feature_report(packet)
                     time.sleep(0.03)
                     response = device.get_feature_report(0x02, 65)
+                    time.sleep(0.1)
                 else:
                     break
 
-        if response and (response[0] == 0xA1 or response[1] == 0xA1):
+        if response[0] == 0xA1 or response[1] == 0xA1:
             Success = True
             if DEBUG == True:
                 print("Success: Device acknowledged command (0xA1).")
 
         else:
-            print(f"Warning: Device did not return success code. Raw: {response[:5]}")
             Success = False
+            if DEBUG == True:
+                print(f"Warning: Device did not return success code. Raw: {response[:5]}")
 
     else:
-        Success, response = [True, []]
+        Success, response = (True, [])
 
     if Success == False:
         print(f"ERROR: Device did not return success code. Raw: {response[:5]}")
