@@ -28,15 +28,19 @@ def send_command(device : hid.Device, packet, NoGetFeature=False):
                     break
 
         if response and (response[0] == 0xA1 or response[1] == 0xA1):
+            Success = True
             if DEBUG == True:
                 print("Success: Device acknowledged command (0xA1).")
-            Success = True
+
         else:
             print(f"Warning: Device did not return success code. Raw: {response[:5]}")
             Success = False
 
     else:
         Success, response = [True, []]
+
+    if Success == False:
+        print(f"ERROR: Device did not return success code. Raw: {response[:5]}")
 
     return Success, response
 
@@ -163,16 +167,20 @@ class GET:
                 self.device.send_feature_report(packet)
                 time.sleep(0.03)
                 response = self.device.get_feature_report(2, 65)
-                print(list(response))
             else:
                 break
 
         if self.profileID == -1:
-            PollingRate = response[6]
+            PollingRateIdx = response[6]
         else:
-            PollingRate = response[7]
-        
-        return Success, Polling_rates[PollingRate]
+            PollingRateIdx = response[7]
+
+        if Success == True:
+            PollingRate = Polling_rates[PollingRateIdx]
+        else:
+            PollingRate = None
+
+        return Success, PollingRate
     
     def motion_sync(self):
         Success, response = send_command(self.device, protocal_cmd.get_motion_sync(self.profileID))

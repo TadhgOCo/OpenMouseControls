@@ -4,12 +4,48 @@ import mouse_hid
 import threading
 import time
 
+DEBUG = False
+
 def cheack_connected(ConnectingThread : threading.Thread):
     if ConnectingThread.is_alive():
         return False
     else:
         return True
     
+def get_startup_data(properties : mouse_hid.properties):
+    dpi_stage = properties.get.dpi_stage()[1]
+    if dpi_stage != 1:
+        properties.set.dpi_stage(1)
+        time.sleep(0.03)
+
+    data = {
+        "Angle Snap"        : lambda: properties.get.angle_snap()[1],
+        "Motion Sync"       : lambda: properties.get.motion_sync()[1],
+        "Ripple Control"    : lambda: properties.get.ripple_control()[1],
+        "Dongle LED"        : lambda: properties.get.dongle_LED()[1],
+        "DPI Level"         : lambda: properties.get.dpi_stage_info(6)[1][0],
+        "Polling Rate"      : lambda: properties.get.polling_rate()[1],
+        "Debounce Time"     : lambda: properties.get.debounce_time()[1],
+        "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
+        "Sleep Timer"       : lambda: properties.get.sleep_time()[1],
+
+        "DPI Stage"         : 1
+    }
+
+    i = 0
+    for key, value in data.items():
+        if i == 9:
+            break
+
+        if data[key] == None:
+            print("Somthing went very wrong")
+            exit(1)
+
+        data[key] = value()
+        time.sleep(0.01)
+        i += 1
+
+    return data
 
 class SplashScreen(ctk.CTkFrame):
     def __init__(self, master, callback):
@@ -92,47 +128,12 @@ class SplashScreen(ctk.CTkFrame):
                 exit(1) # NOTE: Make Better
 
             self.DeviceConnected.set(True)
-            properties = mouse_hid.properties(device, 1, debug=True)
-            self.get_startup_data(properties)
+            properties = mouse_hid.properties(device, 1, debug=DEBUG)
+            data = get_startup_data(properties)
+            self.callback(properties, data)
             return
         else:
             self.after(interval, lambda: self.spin_wait(setup=True))
-
-    def get_startup_data(self, properties : mouse_hid.properties):
-        print("DPI START")
-        dpi_stage = properties.get.dpi_stage()[1]
-        if dpi_stage != 1:
-            properties.set.dpi_stage(1)
-            time.sleep(0.03)
-
-        data = {
-            "Angle Snap"        : lambda: properties.get.angle_snap()[1],
-            "Motion Sync"       : lambda: properties.get.motion_sync()[1],
-            "Ripple Control"    : lambda: properties.get.ripple_control()[1],
-            "Dongle LED"        : lambda: properties.get.dongle_LED()[1],
-            "DPI Level"         : lambda: properties.get.dpi_stage_info(6)[1][0],
-            "Polling Rate"      : lambda: properties.get.polling_rate()[1],
-            "Debounce Time"     : lambda: properties.get.debounce_time()[1],
-            "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
-            "Sleep Timer"       : lambda: properties.get.sleep_time()[1],
-
-            "DPI Stage"         : 1
-        }
-
-        i = 0
-        for key, value in data.items():
-            if i == 9:
-                break
-
-            if data[key] == None:
-                print("Somthing went very wrong")
-                exit(1)
-
-            data[key] = value()
-            time.sleep(0.01)
-            i += 1
-
-        self.callback(properties, data)
 
 
 class MainPage(ctk.CTkFrame):
@@ -183,8 +184,10 @@ class MainPage(ctk.CTkFrame):
         self.create_slider(3, "Sleep Timer", 15, 900, 1, "min")
 
         # Sync Button
-        self.sync_btn = ctk.CTkButton(self.controls, text="Settings Synced", width=200, height=40, corner_radius=10, command=self.sync_btn_pressed)
+        self.sync_btn = ctk.CTkButton(self.controls, text="Settings Synced", width=200, height=40, corner_radius=10, command=self.sync_btn_pressed, state="disabled")
         self.sync_btn.grid(row=7, column=0, columnspan=10, pady=(20, 0))
+
+        self.refres_entrys(data)
 
     def create_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -224,37 +227,18 @@ class MainPage(ctk.CTkFrame):
         self.motion_sync.grid(row=1, column=1, sticky="w", pady=6, padx=15)
         self.ripple.grid(row=2, column=0, sticky="w", pady=6, padx=15)
         self.dongle_led.grid(row=2, column=1, sticky="w", pady=6, padx=15)
-        
-        if self.data["Angle Snap"] == True:
-            self.angle_snap.select()
 
-        if self.data["Motion Sync"] == True:
-            self.motion_sync.select()
-
-        if self.data["Ripple Control"] == True:
-            self.ripple.select()
-
-        if self.data["Dongle LED"] == True:
-            self.dongle_led.select()
 
     def create_dropdowns(self, col_idx, label, options):
         ctk.CTkLabel(self.dropdown_frame, text=label)\
             .grid(row=0, column=col_idx*2, sticky="w", padx=(5, 15), pady=5)
         
         def dropdown_update(choice):
-            self.sync_btn.configure(text="Sync Settings")
+            self.sync_btn.configure(text="Sync Settings", state="normal")
             self.ChangedSettings[label] = float(choice[:-3])
         
         combobox = ctk.CTkComboBox(self.dropdown_frame, values=options, command=dropdown_update)
         combobox.grid(row=1, column=col_idx*2, sticky="w", padx=(5, 15), pady=5)
-
-        if label == "Lift-off Distance":
-            unit = " mm"
-        else:
-            unit = " Hz"
-        
-        value = self.data[label]
-        combobox.set(str(value) + unit)
 
 
     def create_slider(self, row_idx, label, min_v, max_v, step, unit):
@@ -272,13 +256,8 @@ class MainPage(ctk.CTkFrame):
             number_of_steps=int((max_v - min_v) / step)
         )
         slider.grid(row=0, column=0, sticky="ew", padx=(0, 10))
-        
-        value = self.data[label]
-        slider.set(value)
 
         entry = ctk.CTkEntry(container, width=50, justify="center")
-        value = round(value/60) if label == "Sleep Timer" else value
-        entry.insert(0, str(value))
         entry.grid(row=0, column=1)
 
 
@@ -324,10 +303,7 @@ class MainPage(ctk.CTkFrame):
 
         def slider_send_data(label, value):
             value = int(value)
-
-            print(value)
-
-            self.sync_btn.configure(text="Sync Settings")
+            self.sync_btn.configure(text="Sync Settings", state="normal")
             self.ChangedSettings[label] = value
 
 
@@ -349,10 +325,11 @@ class MainPage(ctk.CTkFrame):
             "Dongle LED"     : self.app.IsDongleLED
         }
 
-        self.sync_btn.configure(text="Sync Settings")
+        self.sync_btn.configure(text="Sync Settings", state="normal")
         self.ChangedSettings[label] = get_values[label]
 
     def sync_btn_pressed(self):
+        self.sync_btn.configure(text="Syncing Settings...", state="disabled")
 
         setting_map = {
             "Angle Snap"        : self.properties.set.angle_snap,
@@ -372,8 +349,53 @@ class MainPage(ctk.CTkFrame):
 
         self.ChangedSettings.clear()
 
-        self.sync_btn.configure(text="Settings Synced")
+        time.sleep(0.1)
+        data = get_startup_data(self.properties)
+        self.refres_entrys(data)
 
+        self.sync_btn.configure(text="Settings Synced", state="disabled")
+
+
+    def refres_entrys(self, data=None):
+        if data is None:
+            data = self.data
+
+        if data["Angle Snap"] == True:
+            self.angle_snap.select()
+
+        if data["Motion Sync"] == True:
+            self.motion_sync.select()
+
+        if data["Ripple Control"] == True:
+            self.ripple.select()
+
+        if data["Dongle LED"] == True:
+            self.dongle_led.select()
+
+        values = list(self.dropdown_frame.children.values())[1:]
+        for i in range(0, len(values), 2):
+            label = values[i].cget("text")
+            if label == "Lift-off Distance":
+                unit = " mm"
+            else:
+                unit = " Hz"
+            
+            value = data[label]
+            values[i+1].set(str(value) + unit)
+
+        values = list(self.slider_frame.children.values())[1:]
+        for i in range(0, len(values), 2):
+            label = values[i].cget("text")
+
+            if label == "Sleep Timer":
+                value = round(data[label]/60)
+            else:
+                value = data[label]
+
+            container = list(values[i+1].children.values())[1:]
+            container[0].set(value) # Slider
+            container[1].delete(0, "end") # Entry
+            container[1].insert(0, str(value))
 
     def open_firmware_info(self): # NOTE: properly Center these
         # Check if window already exists to prevent duplicates
