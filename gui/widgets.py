@@ -61,7 +61,7 @@ class SplashScreen(ctk.CTkFrame):
         self.progress.grid() # Show loading bar
         self.progress.start()
         
-        self.spin_wait(interval=1000) 
+        self.spin_wait(interval=1000)
 
     def spin_wait(self, interval=100, setup=False):
         if not setup:

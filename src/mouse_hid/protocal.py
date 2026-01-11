@@ -155,9 +155,9 @@ class GET:
             128 : 8000
         }
 
-        Success, response = send_command(self.device, protocal_cmd.get_polling_rate(self.profileID))
-
         packet = protocal_cmd.get_polling_rate(self.profileID)
+        Success, response = send_command(self.device, packet)
+
         for _ in range(5):
             if not packet[5] != response[4] and packet[6] != response[5]:
                 self.device.send_feature_report(packet)
@@ -171,8 +171,6 @@ class GET:
             PollingRate = response[6]
         else:
             PollingRate = response[7]
-
-        print(list(response), PollingRate)
         
         return Success, Polling_rates[PollingRate]
     

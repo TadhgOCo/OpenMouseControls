@@ -33,4 +33,3 @@ def set_lift_off(ProfileID, dist):
         buf[8] = dist
 
     return bytes(buf)
-    #return True # NOTE: Look at the scource code (why?)

@@ -142,7 +142,7 @@ def main(args):
         out = command(value)
 
     if type(out) == tuple:
-        print(f"\nSuccess: {out[0]}\nValue: {out[1]}")
+        print(f"\nSuccess: {out[0]}\nValue: {out[1:]}")
     else:
         print(f"\nSuccess: {out}\n")
 
