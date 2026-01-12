@@ -3,8 +3,19 @@ from PIL import Image
 import mouse_hid
 import threading
 import time
+import sys
+import os
 
 DEBUG = False
+
+def get_full_path(relative_path):
+    try:
+        # PyInstaller temp folder, stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 def cheack_connected(ConnectingThread : threading.Thread):
     if ConnectingThread.is_alive():
@@ -59,7 +70,8 @@ class SplashScreen(ctk.CTkFrame):
         ctk.CTkLabel(self, text="Welcome", font=("Roboto", 24, "bold"))\
             .grid(row=1, column=0, pady=(0, 20))
         
-        img = Image.open("assets/mouse.png")
+        img_path = get_full_path("assets/mouse.png")
+        img = Image.open(img_path)
 
         # ctk.CTkImage
         self.img = ctk.CTkImage(
@@ -444,4 +456,4 @@ class MainPage(ctk.CTkFrame):
 from os import system
 
 if __name__ == "__main__":
-    system("python -u '/home/tocom/Documents/Python Stuff/MouseReverseEngineering/gui/app.py'")
+    system("python -u '/home/tocom/Documents/Python Stuff/MouseReverseEngineering/main.py'")

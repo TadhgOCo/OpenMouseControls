@@ -1,8 +1,9 @@
 import mouse_hid.protocal_cmd as protocal_cmd
 import time
 import hid
+import sys
 
-DEBUG = True
+DEBUG = False
 
 def send_command(device : hid.Device, packet, NoGetFeature=False):
     device.send_feature_report(packet)
@@ -41,6 +42,10 @@ def send_command(device : hid.Device, packet, NoGetFeature=False):
 
     else:
         Success, response = (True, [])
+
+    if sys.platform == "win32":
+        # When running on windows remove the initial byte of overhead
+        response = response[1:]
 
     if Success == False:
         print(f"ERROR: Device did not return success code. Raw: {response[:5]}")

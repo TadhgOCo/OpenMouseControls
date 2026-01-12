@@ -1,7 +1,13 @@
-#import mouse_hid
+import os
+import sys
+
+if sys.platform == 'win32':
+    # Add the hid_api.dll File
+    dll_path = os.path.dirname(os.path.abspath(__file__))
+    os.add_dll_directory(dll_path)
+
 import customtkinter as ctk
-import time
-from widgets import MainPage, SplashScreen
+from gui.widgets import MainPage, SplashScreen
 
 # Set appearance before initializing the app
 ctk.set_appearance_mode("dark")
@@ -43,17 +49,3 @@ class App(ctk.CTk):
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-
-
-#dev = mouse_hid.find_device()
-#properites = mouse_hid.properties(dev, 2)
-
-#if not dev:
-#    print("No compatible device found.")
-#    exit()
-
-#try:
-#    out = properites.get.battery()
-#    print(out)
-#finally:
-#    dev.close()
