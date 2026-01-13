@@ -5,7 +5,7 @@ This project involves reverse-engineered protocols. Use at your own risk. I am n
 
 ---
 
-![Alt UIScreenshot](https://raw.githubusercontent.com/TadhgOCo/OpenMouseControls/refs/heads/main/assets/UIScreenshot.jpg)
+![Alt UIScreenshot](./assets/UIScreenshot.jpg)
 
 > [!CAUTION]
 > | Model(s)           | Support Level | Notes                                  |
