@@ -212,7 +212,7 @@ __pycache__/
 *.pyo
 *.pyd
 .venv/
-docs/
+documentaion/
 old/
 
 

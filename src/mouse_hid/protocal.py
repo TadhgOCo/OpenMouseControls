@@ -5,7 +5,7 @@ import sys
 
 DEBUG = False
 
-def send_command(device : hid.Device, packet, NoGetFeature=False):
+def send_command(device : hid.Device, packet, NoGetFeature : bool =False):
     device.send_feature_report(packet)
     if NoGetFeature == False:
         time.sleep(0.03)
