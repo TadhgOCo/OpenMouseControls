@@ -16,14 +16,8 @@ def get_full_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
-
-def cheack_connected(ConnectingThread : threading.Thread):
-    if ConnectingThread.is_alive():
-        return False
-    else:
-        return True
     
-def get_startup_data(properties : mouse_hid.properties):
+def get_startup_data(properties : mouse_hid.properties, callback=None):
     dpi_stage = properties.get.dpi_stage()[1]
     if dpi_stage != 1:
         properties.set.dpi_stage(1)
@@ -43,18 +37,13 @@ def get_startup_data(properties : mouse_hid.properties):
         "DPI Stage"         : 1
     }
 
-    i = 0
     for key, value in data.items():
-        if i == 9:
-            break
-
-        if data[key] == None:
-            print("Somthing went very wrong")
-            exit(1)
+        if key == "DPI Stage":
+            data[key] = 1
+            continue
 
         data[key] = value()
         time.sleep(0.01)
-        i += 1
 
     return data
 
@@ -109,7 +98,7 @@ class SplashScreen(ctk.CTkFrame):
         self.progress.grid() # Show loading bar
         self.progress.start()
         
-        self.spin_wait(interval=1000)
+        self.spin_wait(interval=50)
 
     def spin_wait(self, interval=100, setup=False):
         if not setup:
@@ -117,33 +106,29 @@ class SplashScreen(ctk.CTkFrame):
                 mouse_hid.install_perms()
                 self.after(interval, None)
                 
-            if not mouse_hid.check_perms():
-                print("No premissions")
-                exit(1) # NOTE: Make Better
+                if not mouse_hid.check_perms():
+                    self.master.open_error_dialog("No premissions")
+                    time.sleep(999999)
 
-            self.output = [[None]] # NOTE: Figure out why i have to double wrap this
-            self.ConnectingThread = threading.Thread(target=mouse_hid.find_device, args=self.output)
+            self.output = [None]
+            self.ConnectingThread = threading.Thread(target=mouse_hid.find_device, args=(self.output,))
             self.ConnectingThread.start()
 
 
-        if cheack_connected(self.ConnectingThread):
-            while True: # NOTE: Imrpve this, look at line 64 (spin wait)
-                if type(self.output[0]) == list:
-                    self.output = self.output[0]
-                else:
-                    device = self.output[0]
-                    break
-                    
+        if not self.ConnectingThread.is_alive():
+            device = self.output[0][0] if isinstance(self.output[0], list) else self.output[0]
 
-            if device == None:
-                print("No device found")
-                exit(1) # NOTE: Make Better
+            if device is None:
+                self.master.open_error_dialog("No device found")
+                time.sleep(999999)
 
             self.DeviceConnected.set(True)
             properties = mouse_hid.properties(device, 1, debug=DEBUG)
-            data = get_startup_data(properties)
-            self.callback(properties, data)
-            return
+            def get_startup_data_task():
+                data = get_startup_data(properties)
+                self.after(0, lambda: self.callback(properties, data))
+
+            threading.Thread(target=get_startup_data_task, daemon=True).start()
         else:
             self.after(interval, lambda: self.spin_wait(setup=True))
 
@@ -341,6 +326,22 @@ class MainPage(ctk.CTkFrame):
         self.ChangedSettings[label] = get_values[label]
 
     def sync_btn_pressed(self):
+        def ChangePageState(value):
+            self.angle_snap.configure(state=value)
+            self.motion_sync.configure(state=value)
+            self.ripple.configure(state=value)
+            self.dongle_led.configure(state=value)
+
+            values = list(self.dropdown_frame.children.values())[1:]
+            for i in range(1, len(values), 2): # Skip each label
+                values[i].configure(state=value) # Each dropdown
+
+            values = list(self.slider_frame.children.values())[1:]
+            for i in range(0, len(values), 2): # Skip each label
+                container = list(values[i+1].children.values())[1:]
+                container[0].configure(state=value) # Slider
+                container[1].configure(state=value) # Entry
+
         def assign_settings():
             setting_map = {
                 "Angle Snap"        : self.properties.set.angle_snap,
@@ -359,15 +360,26 @@ class MainPage(ctk.CTkFrame):
                 setting(value)
 
             self.ChangedSettings.clear()
+            return
 
         def refresh_screen():
-            time.sleep(0.1)
+            thread = threading.Thread(target=assign_settings, daemon=True)
+            thread.start()
+            thread.join()
+
             data = get_startup_data(self.properties)
             self.refres_entrys(data)
 
-        self.after(0, assign_settings)
-        self.after(0, refresh_screen)
-        self.sync_btn.configure(text="Settings Synced", state="disabled")
+            self.sync_btn.configure(text="Settings Synced", state="disabled")
+            ChangePageState("normal")
+
+            return
+
+        ChangePageState("disabled")
+        self.sync_btn.configure(text="Syncing Settings...", state="disabled")
+
+        thread = threading.Thread(target=refresh_screen, daemon=True)
+        thread.start()
 
 
     def refres_entrys(self, data=None):
@@ -411,6 +423,8 @@ class MainPage(ctk.CTkFrame):
 
             container[1].insert(0, str(value))
 
+        return
+
     def open_firmware_info(self): # NOTE: properly Center these
         # Check if window already exists to prevent duplicates
         if hasattr(self, 'fw_window') and self.fw_window is not None and self.fw_window.winfo_exists():
@@ -420,8 +434,7 @@ class MainPage(ctk.CTkFrame):
         self.fw_window = ctk.CTkToplevel(self)
         self.fw_window.title("Device Info")
         self.fw_window.geometry("300x220")
-        self.fw_window.minsize(300,220)
-        self.fw_window.maxsize(300,220)
+        self.fw_window.resizable(False, False)
         self.fw_window.attributes("-topmost", True)
 
         container = ctk.CTkFrame(self.fw_window, corner_radius=10)
@@ -456,4 +469,4 @@ class MainPage(ctk.CTkFrame):
 from os import system
 
 if __name__ == "__main__":
-    system("python -u '/home/tocom/Documents/Python Stuff/MouseReverseEngineering/main.py'")
+    system("python -u main.py")

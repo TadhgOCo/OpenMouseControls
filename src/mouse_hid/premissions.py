@@ -1,10 +1,14 @@
 import subprocess
 import hid
 import os
+import sys
 
 TARGET_VENDORS = [0x258A, 0x373E] 
 
 def install_perms():
+    if sys.platform == "win32":
+        return
+
     cwd = os.getcwd()
     print(f"{cwd}/udev/install-udev.sh", cwd)
     subprocess.run([
@@ -15,6 +19,9 @@ def install_perms():
     ])
 
 def check_perms():
+    if sys.platform == "win32":
+        return True
+
     for d in hid.enumerate():
         if d["vendor_id"] not in TARGET_VENDORS:
             continue

@@ -90,7 +90,7 @@
 | **Angle Snap** | `0x01` | `0x01` | `0x04` | `0x84` | `1` = On, `0` = Off |
 | **Motion Sync** | `0x01` | `0x01` | `0x09` | `0x89` | `1` = On, `0` = Off |
 | **Ripple Control** | `0x01` | `0x01` | `0x0A` | `0x8A` | `1` = On, `0` = Off |
-| **LOD (Lift Off)** | `0x01` | `0x01` | `0x08` | `0x88` | `1` = 1mm, `2` = 2mm | # NOTE: Not Correct
+| **LOD (Lift Off)** | `0x01` | `0x01` | `0x08` | `0x88` | `0` = 0.7mm, `1` = 1mm, `2` = 2mm |
 | **Sensor Wake** | `0x01` | `0x01` | `0x11` | `0x91` | Wake sensor on move (`1`/`0`) |
 
 ### Power & System (Category `0x02`)
@@ -127,7 +127,7 @@ The polling rate is encoded as a specific byte value, not the direct Hz number.
 
 | Protocol Value | Polling Rate (Hz) |
 | --- | --- |
-| `1 / 16` | 1000 Hz |
+| `1 AND 16` | 1000 Hz |
 | `2` | 500 Hz |
 | `4` | 250 Hz |
 | `8` | 125 Hz |
@@ -141,12 +141,13 @@ DPI is managed in two parts: The DPI Value and the DPI Color. Minimum value of 5
 
 **1. DPI Stage Info (Category `0x0A`)**
 
-* **Set Packet:** `[4]=0x10`, `[5]=0x01`, `[6]=0x01`
+_StageCount is the amount of stages being set_
+* **Set Packet:** `[4]=(StageCount*4)+2`, `[5]=0x01`, `[6]=0x01`
 * **Get Packet:** `[4]=0x10`, `[5]=0x01`, `[6]=0x81`
 * **Payload Structure:**
-* `Byte [7]`: Total stages (eg., 6)
-* `Byte [8]`: Current Stage Index being edited
-* `Byte [9+]`: DPI Values (2 bytes per stage, Big Endian).
+* `Byte [7]`: Profile ID
+* `Byte [8]`: StageCount
+* `Byte [9+]`: DPI Values (2 bytes per stage, Big Endian. Each pair is repeated once, eg. 9 and 11 will be the same value, so will 10 and 12).
 
 
 
