@@ -358,6 +358,7 @@ class MainPage(ctk.CTkFrame):
             for setting_name, value in self.ChangedSettings.items():
                 setting = setting_map[setting_name]
                 setting(value)
+                time.sleep(0.03)
 
             self.ChangedSettings.clear()
             return

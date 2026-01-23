@@ -5,28 +5,37 @@ import sys
 
 DEBUG = False
 
-def send_command(device : hid.Device, packet, NoGetFeature : bool =False):
+def send_command(device : hid.Device, packet : bytes, NoGetFeature : bool = False):
     device.send_feature_report(packet)
     if NoGetFeature == False:
         time.sleep(0.03)
         response = device.get_feature_report(0x02, 65)
+        if sys.platform == "win32":
+            # When running on windows remove the initial byte of overhead
+            response = response[0:]
 
-        if response != 0xA1:
+        if response[0] != 0xA1:
             for _ in range(5):
                 if response[0] > 0xA1:
+                    if DEBUG: print(f"Warning: Device did not return success code: {int(response[0])}. Raw: {str(response[:5])}")
                     device.send_feature_report(packet)
                     time.sleep(0.03)
                     response = device.get_feature_report(0x02, 65)
-                    time.sleep(0.1)
+                    time.sleep(0.06)
+
+                    if sys.platform == "win32": response = response[0:]
                 else:
                     break
 
             for _ in range(3):
-                if response[1] < 0xA1:
+                if DEBUG: print(f"Warning: Device did not return success code: {int(response[0])}. Raw: {str(response[:5])}")
+                if response[0] < 0xA1:
                     device.send_feature_report(packet)
                     time.sleep(0.03)
                     response = device.get_feature_report(0x02, 65)
-                    time.sleep(0.1)
+                    time.sleep(0.06)
+
+                    if sys.platform == "win32": response = response[0:]
                 else:
                     break
 
@@ -38,17 +47,13 @@ def send_command(device : hid.Device, packet, NoGetFeature : bool =False):
         else:
             Success = False
             if DEBUG == True:
-                print(f"Warning: Device did not return success code. Raw: {response[:5]}")
+                print(f"Warning: Device did not return success code: {int(response[0])}. Raw: {str(response[:5])}")
 
     else:
         Success, response = (True, [])
 
-    if sys.platform == "win32":
-        # When running on windows remove the initial byte of overhead
-        response = response[1:]
-
     if Success == False:
-        print(f"ERROR: Device did not return success code. Raw: {response[:5]}")
+        print(f"Warning: Device did not return success code: {int(response[0])}. Raw: {str(response[:5])}")
 
     return Success, response
 

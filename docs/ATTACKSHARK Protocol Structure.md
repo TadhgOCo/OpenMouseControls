@@ -4,7 +4,7 @@
 > **Core Protocol Concept**
 > **Command IDs are NOT unique.**
 > The firmware identifies a command using these three bytes:
-> 1. **Category** (Byte 4)
+> 1. **Category/Length Calculator** (Byte 4)
 > 2. **Compatibility** (Byte 5)
 > 3. **Command ID** (Byte 6)
 > 
@@ -20,7 +20,7 @@
 | --- | --- | --- |
 | **[0]** | Report ID | Usually `0x00` (Handled Automatically). |
 | **[3]** | Target Device | `0x00` = Dongle, `0x01` = Keyboard, `0x02` = Mouse. |
-| **[4]** | Category | Feature namespace (eg., Performance, Lighting). |
+| **[4]** | Category or Length calculator | Feature namespace (eg., Performance, Lighting) or Length Calculator or varible length commands like Maco or DPI. |
 | **[5]** | Compatibility | Feature type (eg., Value, Toggle, Data). |
 | **[6]** | Command ID | Action to preform |
 | **[7+]** | Payload | Data payload (Little Endian or Big Endian varies by feature). |
@@ -35,6 +35,8 @@
 | **[6]** | Command ID | Action to preform |
 | **[7]** | Parameter 1 | Profile ID (1-6), Sub-ID, or MSB of a value. |
 | **[8+]** | Payload | Data payload (Little Endian or Big Endian varies by feature). |
+
+_Byte 4 is Length **ONLY** for variable-length commands (buttons, macros, DPI stages). For fixed-length commands, Byte 4 remains Category._
 
 ## 2. Protocol Value
 
@@ -86,7 +88,8 @@
 
 | Feature Name | Category | Comp | Set ID | Get ID | Payload Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Polling Rate** | `0x01` | `0x01` | `0x00` | `0x80` | See Below. |
+| **Profile ID** | `0x01` | `0x00` | `0x05` | `0x85` | Byte [7] = Profile ID (1-6) |
+| **Polling Rate** | Old: `0x01` / New:`0x02` | `0x01` | `0x00` | `0x80` | See Below. |
 | **Angle Snap** | `0x01` | `0x01` | `0x04` | `0x84` | `1` = On, `0` = Off |
 | **Motion Sync** | `0x01` | `0x01` | `0x09` | `0x89` | `1` = On, `0` = Off |
 | **Ripple Control** | `0x01` | `0x01` | `0x0A` | `0x8A` | `1` = On, `0` = Off |
@@ -97,22 +100,37 @@
 
 | Feature Name | Category | Comp | Set ID | Get ID | Payload Notes |
 | --- | --- | --- | --- | --- | --- |
-| **Sleep Time** | `0x02` | `0x00` | `0x07` | `0x87` | Bytes [7-8] (Big Endian) |
+| **Sleep Time** | `0x03` | `0x00` | `0x07` | `0x87` | Bytes [7-8] (Big Endian) |
 | **Debounce** | `0x02` | `0x00` | `0x08` | `0x88` | Byte [8] = ms (e.g., 4ms) |
 | **Dongle LED** | `0x02` | `0x02` | `0x04` | `0x84` | `1` = On, `0` = Off |
 | **Active DPI** | `0x02` | `0x01` | `0x02` | `0x82` | Byte [8] = Active Stage Index (1-6) |
-| **Battery Level** | `0x02` | `0x00` | - | `0x83` | Byte [7] = Status, [8] = Percent |
-| **Reset Profile** | `0x02` | `0x00` | `0xC0` | - | **Destructive Reset** |
+| **Battery Level** | `0x02` | `0x00` | - | `0x83` | Byte [7] = ChargingStatus, [8] = Percent |
+| **Reset Profile** | `0x01` | `0x00` | `0x0D` | - | **Destructive Reset** |
+| **Factory Reset.** | `0x02` | `0x00` | `0x00` | - | Byte [7] = `0xC0` |
 
 ### Configuration (Category `0x00` / `0x0A` / `0x13`)
 
 | Feature Name | Category | Comp | Set ID | Get ID | Payload Notes |
 | --- | --- | --- | --- | --- | --- |
-| **DPI Stages** | `0x0A` | `0x01` | `0x01` | `0x81` | See Below |
+| **DPI Stages** | `0x0A` | `0x01` | `0x01` | `0x81` | See Below, Byte4 = (StageCount * 4) + 2 |
 | **DPI Colors** | `0x13` | `0x02` | `0x01` | `0x81` | RGB Arrays |
-| **Button Map** | `0x00` | `0x03` | `0x00` | `0x80` | Map clicks to keys |
-| **Macros** | `0x00` | `0x04` | `0x03` | - | Set Macro Data Block |
-| **Firmware Ver** | `0x02` | `0x10` | - | `0x81` | Read Firmware Version |
+| **Button Map** | `0x00` | `0x03` | `0x00` | `0x80` | Map clicks to keys, Byte4 = 5 + dataLength |
+| **Lighting Effects** | `0x00` | `0x02` | `0x00` | `0x80` | See Below, Byte[4] = 5 + dataColorLength |
+| **Brightness** | `0x03` | `0x02` | `0x02` | `0x82` | Byte [9] = brightness value |
+| **Macros** | `0x00` | `0x04` | `0x03` | - | Set Macro Data Block, Byte4 = 7 + dataLength |
+| **Firmware Ver** | `0x10` | `0x00` | - | `0x81` | Read Firmware Version |
+| **Get PID** | `0x06` | `0x00` | - | `0x8B` | Read Product ID |
+
+_Byte 4 is Length for Buttons, Macros, DPI stages._
+_For fixed-length commands, Byte 4 remains Category._
+
+### Non-Standard Commands
+These commands don't follow the normal Category/Compatibility/Command ID pattern:
+
+| Feature | Packet Format | Notes |
+| --- | --- | --- | --- |
+| Factory Reset | [4]=0x02, [6]=0x00, [7]=0xC0 | Command value is in payload byte |
+| Get PID | [4]=0x06, [6]=0x8B, [7]=0x02 | Requires Byte [7] = 0x02 |
 
 #### Profile ID (Byte 7):
 The Profile ID is a value that ranges from 1-6 but it is possible access numbers up to 64 and still get a success code. This may cause errors with data storage space and is unsupported by the manufacturer.
@@ -127,7 +145,7 @@ The polling rate is encoded as a specific byte value, not the direct Hz number.
 
 | Protocol Value | Polling Rate (Hz) |
 | --- | --- |
-| `1 AND 16` | 1000 Hz |
+| `1` | 1000 Hz |
 | `2` | 500 Hz |
 | `4` | 250 Hz |
 | `8` | 125 Hz |
@@ -143,7 +161,7 @@ DPI is managed in two parts: The DPI Value and the DPI Color. Minimum value of 5
 
 _StageCount is the amount of stages being set_
 * **Set Packet:** `[4]=(StageCount*4)+2`, `[5]=0x01`, `[6]=0x01`
-* **Get Packet:** `[4]=0x10`, `[5]=0x01`, `[6]=0x81`
+* **Get Packet:** `[4]=0x0A`, `[5]=0x01`, `[6]=0x81`
 * **Payload Structure:**
 * `Byte [7]`: Profile ID
 * `Byte [8]`: StageCount
@@ -254,14 +272,14 @@ def send_command(device: hid.device, packet: bytes, target=0x02) -> tuple[bool, 
 def set_polling_rate(device: hid.device, hz: int) -> bool:
     # Map Hz to Protocol Value
     hz_map = {
-        1000: 1, 500: 2, 250: 4, 125: 8, 1000: 16,
+        1000: 1, 500: 2, 250: 4, 125: 8,
         2000: 32, 4000: 64, 8000: 128
     }
     
     # Structure: [3]=Target, [4]=Cat, [5]=Comp, [6]=Cmd, [7]=Val
     packet = bytearray(65)
     packet[3] = 0x02 # Mouse
-    packet[4] = 0x01 # Perf Cat
+    packet[4] = 0x02 # Perf Cat
     packet[5] = 0x01 # Perf Comp
     packet[6] = 0x00 # Set Polling
     packet[7] = hz_map[hz] # Byte Map

@@ -77,47 +77,47 @@ class App(ctk.CTk):
         self.open_error_dialog("CRITICAL ERROR", str(val))
 
     def open_error_dialog(self, error_title, error_msg=""):
-            # Check if window already exists to prevent duplicates
-            if hasattr(self, 'fw_window') and self.fw_window.winfo_exists():
-                self.fw_window.lift()
-                return
-            
-            def kill_program():
-                root = self.winfo_toplevel()
-                root.destroy()
-                exit(1)
+        # Check if window already exists to prevent duplicates
+        if hasattr(self, 'fw_window') and self.fw_window.winfo_exists():
+            self.fw_window.lift()
+            return
+        
+        def kill_program():
+            root = self.winfo_toplevel()
+            root.destroy()
+            exit(1)
 
-            self.fw_window = ctk.CTkToplevel(self)
-            self.fw_window.title("OpenMouseControl - ERROR")
-            self.fw_window.geometry("530x400")
-            self.fw_window.resizable(False, False)
-            self.fw_window.attributes("-topmost", True)
+        self.fw_window = ctk.CTkToplevel(self)
+        self.fw_window.title("OpenMouseControl - ERROR")
+        self.fw_window.geometry("530x400")
+        self.fw_window.resizable(False, False)
+        self.fw_window.attributes("-topmost", True)
 
-            # When the user presses the X button
-            self.fw_window.protocol("WM_DELETE_WINDOW", kill_program)
+        # When the user presses the X button
+        self.fw_window.protocol("WM_DELETE_WINDOW", kill_program)
 
-            container = ctk.CTkFrame(self.fw_window, corner_radius=10)
-            container.pack(fill="both", expand=True, padx=20, pady=20)
+        container = ctk.CTkFrame(self.fw_window, corner_radius=10)
+        container.pack(fill="both", expand=True, padx=20, pady=20)
 
-            ctk.CTkLabel(container, text=f"⚠ Error: {error_title}", font=("Arial", 18, "bold"), text_color="#FF5555")\
-                .pack(pady=(20, 10))
-            
-            messages = {
-                "No premissions": NOPREMISSIONMESSAGE,
-                "No device found": NODEVICEFOUNDMESSAGE,
-            }
-            
-            display_text = messages.get(error_title, GENERALERROR+error_msg)
+        ctk.CTkLabel(container, text=f"⚠ Error: {error_title}", font=("Arial", 18, "bold"), text_color="#FF5555")\
+            .pack(pady=(20, 10))
+        
+        messages = {
+            "No premissions": NOPREMISSIONMESSAGE,
+            "No device found": NODEVICEFOUNDMESSAGE,
+        }
+        
+        display_text = messages.get(error_title, GENERALERROR+error_msg)
 
-            ctk.CTkLabel(container, text=display_text, font=("Arial", 14), wraplength=450, justify="left").pack(pady=10, padx=20)
+        ctk.CTkLabel(container, text=display_text, font=("Arial", 14), wraplength=450, justify="left").pack(pady=10, padx=20)
 
-            ctk.CTkButton(
-                container, 
-                text="Exit Application", 
-                command=kill_program,
-                fg_color="#CC3333", 
-                hover_color="#992222"
-            ).pack(side="bottom", pady=20)
+        ctk.CTkButton(
+            container, 
+            text="Exit Application", 
+            command=kill_program,
+            fg_color="#CC3333", 
+            hover_color="#992222"
+        ).pack(side="bottom", pady=20)
 
 
 if __name__ == "__main__":
