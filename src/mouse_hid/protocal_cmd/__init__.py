@@ -14,7 +14,7 @@ from .pid import get_device_pid
 from .motion_sync import set_motion_sync, get_motion_sync
 from .pair_status import pair_to_device, get_paired
 from .polling import set_polling_rate, get_polling_rate
-from .profile import reset_defaults, reset_profile
+from .profile import reset_defaults, reset_profile, get_profile, set_profile
 from .ripple import get_ripple_contol, set_ripple_contol
 from .sleep_time import get_sleep, set_sleep
 
@@ -46,5 +46,7 @@ __all__ = [
     "get_ripple_contol",
     "set_ripple_contol",
     "get_sleep",
-    "set_sleep"
+    "set_sleep",
+    "get_profile",
+    "set_profile"
 ]

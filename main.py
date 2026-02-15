@@ -28,8 +28,10 @@ You could also try replugging your mouse and restarting your PC.
 GENERALERROR = """
 Something has gone very wrong :-(, please report this error at:
 https://github.com/TadhgOCo/OpenMouseControls/issues
+
 Include a screenshot of this screen and a discription of what you did, along with our OS and Mouse.
 Also run this app in the terminal and paste the error into your bug report.
+
 Error Captured:
 
 """
@@ -76,16 +78,18 @@ class App(ctk.CTk):
         print(error_msg) # Still print to console for debugging
         self.open_error_dialog("CRITICAL ERROR", str(val))
 
-    def open_error_dialog(self, error_title, error_msg=""):
+    def open_error_dialog(self, error_title, error_msg="", fatal=True):
         # Check if window already exists to prevent duplicates
         if hasattr(self, 'fw_window') and self.fw_window.winfo_exists():
             self.fw_window.lift()
             return
         
         def kill_program():
-            root = self.winfo_toplevel()
-            root.destroy()
-            exit(1)
+            self.fw_window.destroy()
+            if fatal:
+                root = self.winfo_toplevel()
+                root.destroy()
+                exit(1)
 
         self.fw_window = ctk.CTkToplevel(self)
         self.fw_window.title("OpenMouseControl - ERROR")
@@ -118,6 +122,10 @@ class App(ctk.CTk):
             fg_color="#CC3333", 
             hover_color="#992222"
         ).pack(side="bottom", pady=20)
+
+
+        self.fw_window.grab_set()
+        self.wait_window(self.fw_window)
 
 
 if __name__ == "__main__":

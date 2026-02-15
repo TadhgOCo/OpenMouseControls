@@ -18,6 +18,7 @@ def get_full_path(relative_path):
     return os.path.join(base_path, relative_path)
     
 def get_startup_data(properties : mouse_hid.properties, callback=None):
+
     dpi_stage = properties.get.dpi_stage()[1]
     if dpi_stage != 1:
         properties.set.dpi_stage(1)
@@ -107,8 +108,8 @@ class SplashScreen(ctk.CTkFrame):
                 self.after(interval, None)
                 
                 if not mouse_hid.check_perms():
-                    self.master.open_error_dialog("No premissions")
-                    time.sleep(999999)
+                    self.master.open_error_dialog("No Premissions", fatal=True)
+                    self.master.destroy()
 
             self.output = [None]
             self.ConnectingThread = threading.Thread(target=mouse_hid.find_device, args=(self.output,))
@@ -119,8 +120,8 @@ class SplashScreen(ctk.CTkFrame):
             device = self.output[0][0] if isinstance(self.output[0], list) else self.output[0]
 
             if device is None:
-                self.master.open_error_dialog("No device found")
-                time.sleep(999999)
+                self.master.open_error_dialog("No device found", fatal=True)
+                self.master.destroy()
 
             self.DeviceConnected.set(True)
             properties = mouse_hid.properties(device, 1, debug=DEBUG)
@@ -141,6 +142,9 @@ class MainPage(ctk.CTkFrame):
         self.data = data
         self.grid_columnconfigure(0, weight=1)
         self.ChangedSettings = {}
+        self.slider_widgets = {}
+        self.is_refreshing = False
+        self.CurrentProfile = int(self.properties.get.profile_id()[1])
         
         # Battery + Firmware Info
         self.create_header()
@@ -157,11 +161,20 @@ class MainPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=18, weight="bold")
         ).grid(row=0, column=0, columnspan=2, padx=10, pady=(0, 15), sticky="w")
 
+        # Profile Switcher
+        ProfileFrame = ctk.CTkFrame(self.controls, corner_radius=10)
+        ProfileFrame.grid(row=0, column=2, padx=10, pady=(0, 15), sticky="e")
+        
+        combobox = ctk.CTkComboBox(ProfileFrame, values=[f"Profile: {i+1}" for i in range(3)], command=self.update_profiles)
+        combobox.grid(row=0, column=2, columnspan=2, sticky="w", padx=(5, 10), pady=5)
+        combobox.set(f"Profile: {self.CurrentProfile}")
+
+
         self.create_checkboxes()
 
         # Dropdown frame
         self.dropdown_frame = ctk.CTkFrame(self.controls, corner_radius=10)
-        self.dropdown_frame.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.dropdown_frame.grid(row=4, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
         self.dropdown_frame.grid_columnconfigure(0, weight=1)
 
         # Dropdowns
@@ -172,7 +185,7 @@ class MainPage(ctk.CTkFrame):
 
         # Sliders frame
         self.slider_frame = ctk.CTkFrame(self.controls, corner_radius=10)
-        self.slider_frame.grid(row=5, column=0, columnspan=2, padx=10, pady=10, sticky="ew")
+        self.slider_frame.grid(row=5, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
         self.slider_frame.grid_columnconfigure(0, weight=1)
 
         # Sliders
@@ -182,9 +195,9 @@ class MainPage(ctk.CTkFrame):
 
         # Sync Button
         self.sync_btn = ctk.CTkButton(self.controls, text="Settings Synced", width=200, height=40, corner_radius=10, command=self.sync_btn_pressed, state="disabled")
-        self.sync_btn.grid(row=7, column=0, columnspan=10, pady=(20, 0))
+        self.sync_btn.grid(row=7, column=0, columnspan=3, pady=(20, 0))
 
-        self.refres_entrys(data)
+        self.refresh_entrys(data)
 
     def create_header(self):
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -220,10 +233,10 @@ class MainPage(ctk.CTkFrame):
         self.ripple = ctk.CTkCheckBox(self.controls, text="Ripple Control",   command= lambda: self.update_app_state("Ripple Control"))
         self.dongle_led = ctk.CTkCheckBox(self.controls, text="Dongle LED",   command= lambda: self.update_app_state("Dongle LED"))
 
-        self.angle_snap.grid(row=1, column=0, sticky="w", pady=6, padx=15)
-        self.motion_sync.grid(row=1, column=1, sticky="w", pady=6, padx=15)
-        self.ripple.grid(row=2, column=0, sticky="w", pady=6, padx=15)
-        self.dongle_led.grid(row=2, column=1, sticky="w", pady=6, padx=15)
+        self.angle_snap.grid(row=1, column=0, columnspan=3, sticky="w", pady=6, padx=15)
+        self.motion_sync.grid(row=1, column=2, columnspan=3, sticky="w", pady=6, padx=15)
+        self.ripple.grid(row=2, column=0, columnspan=3, sticky="w", pady=6, padx=15)
+        self.dongle_led.grid(row=2, column=2, columnspan=3, sticky="w", pady=6, padx=15)
 
 
     def create_dropdowns(self, col_idx, label, options):
@@ -257,51 +270,61 @@ class MainPage(ctk.CTkFrame):
         entry = ctk.CTkEntry(container, width=50, justify="center")
         entry.grid(row=0, column=1)
 
+        self.slider_widgets[label] = {
+                    "slider": slider,
+                    "entry": entry
+                }
+
 
         ctk.CTkLabel(container, text=unit, width=30, text_color="gray").grid(row=0, column=2, padx=(5, 0))
 
         def slider_update(label, value):
-            entry.delete(0, "end")
-            EntryValue = round(value/60) if label == "Sleep Timer" else value
-            if isinstance(step, int) or step.is_integer():
-                entry.insert(0, int(EntryValue))
-            else:
-                entry.insert(0, f"{EntryValue:.1f}")
+            if not self.is_refreshing:
+                entry.delete(0, "end")
+                EntryValue = round(value/60) if label == "Sleep Timer" else value
+                if isinstance(step, int) or step.is_integer():
+                    entry.insert(0, int(EntryValue))
+                else:
+                    entry.insert(0, f"{EntryValue:.1f}")
 
         def entry_update(label, EvType, event):
-            if EvType == "Return":
-                slider_send_data(label, slider.get())
+            if not self.is_refreshing:
 
-            try:
-                Entryvalue = float(entry.get())
-                value = Entryvalue
+                try:
+                    Entryvalue = float(entry.get())
+                    value = Entryvalue
 
-                if label == "DPI Level":
-                    Entryvalue = max(50, min(42000, Entryvalue))
-                    Entryvalue = round(Entryvalue)
-                    value = round(Entryvalue)
+                    if label == "DPI Level":
+                        Entryvalue = max(50, min(42000, Entryvalue))
+                        Entryvalue = round(Entryvalue)
+                        value = round(Entryvalue)
 
-                if label == "Debounce Time":
-                    Entryvalue = max(0, min(15, Entryvalue))
-                    Entryvalue = round(Entryvalue)
-                    value = round(Entryvalue)
+                    if label == "Debounce Time":
+                        Entryvalue = max(0, min(15, Entryvalue))
+                        Entryvalue = round(Entryvalue)
+                        value = round(Entryvalue)
 
-                if label == "Sleep Timer":
-                    Entryvalue = max(1, min(15, Entryvalue))
-                    Entryvalue = round(Entryvalue)
-                    value = round(Entryvalue*60)
+                    if label == "Sleep Timer":
+                        Entryvalue = max(1, min(15, Entryvalue))
+                        Entryvalue = round(Entryvalue)
+                        value = round(Entryvalue*60)
 
-                entry.delete(0, "end")
-                entry.insert(0, f"{Entryvalue}")
+                    entry.delete(0, "end")
+                    entry.insert(0, f"{Entryvalue}")
 
-                slider.set(value)
-            except ValueError:
-                pass
+                    slider.set(value)
+
+                    if EvType == "Return":
+                        slider_send_data(label, slider.get())
+
+                except ValueError as e:
+                    print(f"Value Error:\n{e}")
 
         def slider_send_data(label, value):
-            value = int(value)
-            self.sync_btn.configure(text="Sync Settings", state="normal")
-            self.ChangedSettings[label] = value
+            if not self.is_refreshing:
+                value = int(value)
+                self.sync_btn.configure(text="Sync Settings", state="normal")
+                self.ChangedSettings[label] = value
 
 
         slider.configure(command= lambda value: slider_update(label, value))
@@ -310,6 +333,10 @@ class MainPage(ctk.CTkFrame):
         entry.bind("<FocusOut>",  lambda event: entry_update(label, "Focus", event))
 
     def update_app_state(self, label):
+        if self.is_refreshing:
+            print("Refreshing (ln: 337)")
+            return
+
         self.app.IsAngleSnap = self.angle_snap.get()
         self.app.IsMotionSync = self.motion_sync.get()
         self.app.IsRippleControl = self.ripple.get()
@@ -325,7 +352,7 @@ class MainPage(ctk.CTkFrame):
         self.sync_btn.configure(text="Sync Settings", state="normal")
         self.ChangedSettings[label] = get_values[label]
 
-    def sync_btn_pressed(self):
+    def sync_btn_pressed(self, AssignSettings=True):
         def ChangePageState(value):
             self.angle_snap.configure(state=value)
             self.motion_sync.configure(state=value)
@@ -362,42 +389,68 @@ class MainPage(ctk.CTkFrame):
 
             self.ChangedSettings.clear()
             return
-
-        def refresh_screen():
-            thread = threading.Thread(target=assign_settings, daemon=True)
-            thread.start()
-            thread.join()
-
-            data = get_startup_data(self.properties)
-            self.refres_entrys(data)
-
-            self.sync_btn.configure(text="Settings Synced", state="disabled")
+        
+        def finish_ui_update(data):
+            self.data = data
             ChangePageState("normal")
 
-            return
+            # This is below the ChangePageState to allow the entry values to be changed by Tkinker
+            self.refresh_entrys(data)
+
+            self.sync_btn.configure(text="Settings Synced", state="disabled")
+
+        def refresh_screen(AssignSettings=True):
+            if AssignSettings:
+                assign_settings()
+                #thread = threading.Thread(target=assign_settings, daemon=True)
+                #thread.start()
+                #thread.join()
+
+            data = get_startup_data(self.properties)
+            self.after(0, lambda: finish_ui_update(data))
 
         ChangePageState("disabled")
         self.sync_btn.configure(text="Syncing Settings...", state="disabled")
 
-        thread = threading.Thread(target=refresh_screen, daemon=True)
+        thread = threading.Thread(target=lambda: refresh_screen(AssignSettings), daemon=True)
         thread.start()
 
+    def update_profiles(self, choice):
+        profile = int(choice.split(":")[-1].strip())
 
-    def refres_entrys(self, data=None):
+        self.CurrentProfile = profile
+        self.properties.set_profile(profile)
+
+        self.ChangedSettings = self.data.copy()
+        self.ChangedSettings.clear()
+        self.sync_btn_pressed(AssignSettings=False)
+
+
+    def refresh_entrys(self, data=None):
+        self.is_refreshing = True
+
         if data is None:
             data = self.data
 
         if data["Angle Snap"] == True:
             self.angle_snap.select()
+        else:
+            self.angle_snap.deselect()
 
         if data["Motion Sync"] == True:
             self.motion_sync.select()
+        else:
+            self.motion_sync.deselect()
 
         if data["Ripple Control"] == True:
             self.ripple.select()
+        else:
+            self.ripple.deselect()
 
         if data["Dongle LED"] == True:
             self.dongle_led.select()
+        else:
+            self.dongle_led.deselect()
 
         values = list(self.dropdown_frame.children.values())[1:]
         for i in range(0, len(values), 2):
@@ -407,24 +460,26 @@ class MainPage(ctk.CTkFrame):
             else:
                 unit = " Hz"
             
-            value = data[label]
-            values[i+1].set(str(value) + unit)
+            num = data[label]
+            values[i+1].set(str(num) + unit)
 
-        values = list(self.slider_frame.children.values())[1:]
-        for i in range(0, len(values), 2):
-            label = values[i].cget("text")
-            value = data[label]
+        for label, widgets in self.slider_widgets.items():
+            if label in data:
+                num = data[label]
+                slider = widgets["slider"]
+                entry = widgets["entry"]
 
-            container = list(values[i+1].children.values())[1:]
-            container[0].set(value) # Slider
-            container[1].delete(0, "end") # Entry
+                slider.set(num) 
 
-            if label == "Sleep Timer":
-                value = round(data[label]/60)
+                if label == "Sleep Timer":
+                    display_value = str(round(num / 60))
+                else:
+                    display_value = str(num)
 
-            container[1].insert(0, str(value))
+                entry.delete(0, "end")
+                entry.insert(0, display_value)
 
-        return
+        self.is_refreshing = False
 
     def open_firmware_info(self): # NOTE: properly Center these
         # Check if window already exists to prevent duplicates

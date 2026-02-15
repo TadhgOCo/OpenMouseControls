@@ -59,16 +59,24 @@ def send_command(device : hid.Device, packet : bytes, NoGetFeature : bool = Fals
 
 
 class properties:
-    def __init__(self, dev : hid.Device, profileID : int = -1, debug=False):
+    def __init__(self, dev : hid.Device, ProfileID : int = -1, debug=False):
         global DEBUG
 
         DEBUG = debug
 
-        if profileID != -1:
-            profileID = min(max(profileID, 1), 3)
+        self.dev = dev
+        if ProfileID != -1:
+            ProfileID = min(max(ProfileID, 1), 6)
 
-        self.get = GET(dev, profileID)
-        self.set = SET(dev, profileID)
+        self.get = GET(self.dev, ProfileID)
+        self.set = SET(self.dev, ProfileID)
+
+    def set_profile(self, ProfileID):
+        self.get.profileID = ProfileID
+        self.set.profileID = ProfileID
+
+        self.set.profile_id(ProfileID)
+
 
 class GET:
     def __init__(self, dev : hid.Device, profileID : int = -1):
@@ -76,7 +84,8 @@ class GET:
         self.device = dev
 
     def angle_snap(self):
-        Success, response = send_command(self.device, protocal_cmd.get_angle_snap(self.profileID))
+        packet = protocal_cmd.get_angle_snap(self.profileID)
+        Success, response = send_command(self.device, packet)
 
         if self.profileID == -1:
             isEnabled = response[6]
@@ -86,20 +95,23 @@ class GET:
         return Success, isEnabled
     
     def debounce_time(self):
-        Success, response = send_command(self.device, protocal_cmd.get_debounce(self.profileID))
+        packet = protocal_cmd.get_debounce(self.profileID)
+        Success, response = send_command(self.device, packet)
 
         DebounceTime = response[7]
 
         return Success, DebounceTime
     
     def dongle_LED(self):
-        Success, response = send_command(self.device, protocal_cmd.get_dongle_LED(self.profileID))
+        packet = protocal_cmd.get_dongle_LED(self.profileID)
+        Success, response = send_command(self.device, packet)
 
         isEnabled = response[7]
         return Success, isEnabled
     
     def battery(self):
-        Success, response = send_command(self.device, protocal_cmd.get_battery())
+        packet = protocal_cmd.get_battery()
+        Success, response = send_command(self.device, packet)
 
         isChrarging = response[6]
         percentage = response[7]
@@ -107,7 +119,8 @@ class GET:
         return Success, percentage, isChrarging
     
     def dpi_stage_info(self, StageNo=6):
-        Success, response = send_command(self.device, protocal_cmd.get_dpi_stage_info(self.profileID, StageNo))
+        packet = protocal_cmd.get_dpi_stage_info(self.profileID, StageNo)
+        Success, response = send_command(self.device, packet)
 
         DPI_list = []
         for i in range(StageNo):
@@ -117,14 +130,16 @@ class GET:
         return Success, DPI_list
     
     def dpi_stage(self):
-        Success, response = send_command(self.device, protocal_cmd.get_dpi_stage(self.profileID))
+        packet = protocal_cmd.get_dpi_stage(self.profileID)
+        Success, response = send_command(self.device, packet)
 
         CurrentStage = response[7]
 
         return Success, CurrentStage
 
     def dev_firmware_ver(self):
-        Success, response = send_command(self.device, protocal_cmd.get_dev_firmware_ver())
+        packet = protocal_cmd.get_dev_firmware_ver()
+        Success, response = send_command(self.device, packet)
 
         FirmwareVer = ""
         for i in range(7, 11):
@@ -133,7 +148,8 @@ class GET:
         return Success, FirmwareVer[:-1]
     
     def dongle_firmware_ver(self):
-        Success, response = send_command(self.device, protocal_cmd.get_dongle_firmware_ver())
+        packet = protocal_cmd.get_dongle_firmware_ver()
+        Success, response = send_command(self.device, packet)
 
         FirmwareVer = ""
         for i in range(7, 11):
@@ -142,7 +158,8 @@ class GET:
         return Success, FirmwareVer[:-1]
     
     def lift_off_dist(self):
-        Success, response = send_command(self.device, protocal_cmd.get_lift_off(self.profileID))
+        packet = protocal_cmd.get_lift_off(self.profileID)
+        Success, response = send_command(self.device, packet)
 
         if self.profileID == -1:
             dist = response[6]
@@ -155,7 +172,8 @@ class GET:
         return Success, dist
     
     def PID(self):
-        Success, response = send_command(self.device, protocal_cmd.get_device_pid())
+        packet = protocal_cmd.get_device_pid()
+        Success, response = send_command(self.device, packet)
 
         pid = response[10] * 256 + response[11]     
         return Success, pid
@@ -188,7 +206,7 @@ class GET:
         else:
             PollingRateIdx = response[7]
 
-        if Success == True:
+        if Success == True and PollingRateIdx != "":
             PollingRate = Polling_rates[PollingRateIdx]
         else:
             PollingRate = None
@@ -196,7 +214,8 @@ class GET:
         return Success, PollingRate
     
     def motion_sync(self):
-        Success, response = send_command(self.device, protocal_cmd.get_motion_sync(self.profileID))
+        packet = protocal_cmd.get_motion_sync(self.profileID)
+        Success, response = send_command(self.device, packet)
         if self.profileID == -1:
             isEnabled = response[6]
         else:
@@ -205,13 +224,15 @@ class GET:
         return Success, isEnabled
     
     def pairing(self):
-        Success, response = send_command(self.device, protocal_cmd.get_paired())
+        packet = protocal_cmd.get_paired()
+        Success, response = send_command(self.device, packet)
         isPaired = response[6]
 
         return Success, isPaired
     
     def ripple_control(self):
-        Success, response = send_command(self.device, protocal_cmd.get_ripple_contol(self.profileID))
+        packet = protocal_cmd.get_ripple_contol(self.profileID)
+        Success, response = send_command(self.device, packet)
         
         if self.profileID == -1:
             isEnabled = response[6]
@@ -221,7 +242,8 @@ class GET:
         return Success, isEnabled
     
     def sleep_time(self):
-        Success, response = send_command(self.device, protocal_cmd.get_sleep(self.profileID))
+        packet = protocal_cmd.get_sleep(self.profileID)
+        Success, response = send_command(self.device, packet)
         
         if self.profileID == -1:
             Stime = (response[6] * 256) + response[7]
@@ -229,6 +251,13 @@ class GET:
             Stime = (response[7] * 256) + response[8]
 
         return Success, Stime
+    
+    def profile_id(self):
+        packet = protocal_cmd.get_profile()
+        Success, response = send_command(self.device, packet)
+
+        return Success, response[6]
+
 
 class SET:
     def __init__(self, dev, profileID):
@@ -312,5 +341,14 @@ class SET:
     
     def reset_defaults(self):
         Success, _ = send_command(self.device, protocal_cmd.reset_defaults(), NoGetFeature=True)
+
+        return Success
+    
+    def profile_id(self, profileID=None):
+        if profileID is None:
+            profileID = self.profileID
+
+        packet = protocal_cmd.set_profile(profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
