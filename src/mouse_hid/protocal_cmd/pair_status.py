@@ -4,7 +4,7 @@ def pair_to_device(isPaired):
     buf[3] = 0x1
     buf[4] = 0x1
     buf[6] = 0x0C
-    buf[7] = isPaired # () NOTE: check source to see possible values
+    buf[7] = isPaired
 
     return bytes(buf)
 

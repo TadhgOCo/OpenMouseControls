@@ -2,9 +2,8 @@
 
 __version__ = "0.1.0"
 
-from .device import find_device
+from .device import find_device, SUFFIX_LIST
 from .protocal import properties
-from .errors import MouseHIDError
 from .premissions import install_perms, check_perms
 
 __all__ = [
@@ -12,7 +11,7 @@ __all__ = [
     "set",
     "get",
     "properties",
-    "MouseHIDError",
     "install_perms",
-    "check_perms"
+    "check_perms",
+    "SUFFIX_LIST"
 ]

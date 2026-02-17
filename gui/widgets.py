@@ -8,6 +8,70 @@ import os
 
 DEBUG = False
 
+ModelDataList = {
+    # "MODEL_NAME" : "Max_DPI,Max_Polling_Rate,Protocal_Version,Product_ID"
+    "X3": "26000,1000,v3,?",
+    "X3 PRO": "26000,8000,v3,?",
+    "X3 MAX": "42000,1000,v3,?",
+    "X8 SE": "25000,1000,v3,?",
+    "X8 PLUS": "40000,1000,v3,?",
+    "X8 PRO": "40000,8000,v3,?",
+    "X8 ULTRA": "42000,8000,v3,?",
+    "X8 ULTIMATE": "42000,8000,v3,?",
+    "X11": "22000,1000,v3,?",
+    "X11 SE": "22000,1000,v3,?",
+    "R11 ULTRA": "42000,8000,v?,?",
+    "R5 ULTRA": "42000,8000,v3,?",
+    "G3": "22000,1000,v3,?",
+    "G3 PRO": "25000,1000,v3,?",
+
+    "X6": "26000,1000,v?,?",
+    "R1": "18000,1000,v?,?",
+    "R3": "26000,8000,v3,?",
+    "X1": "40000,1000,v?,?",
+    "R2": "42000,8000,v?,?",
+    "X5": "4000,250,v?,?",
+    "X2": "4000,250,v?,?",
+    "V6": "25000,1000,v?,?",
+    "V3": "25000,1000,v?,?",
+    "V5": "42000,8000,v?,?",
+    "R6": "42000,8000,v2,61476",
+}
+
+MODEL_DATA = {}
+for model in ModelDataList.keys():
+    data = ModelDataList[model].split(",")
+
+    if data[3] == "?":
+        pid = "?"
+    else:
+        pid = int(data[3])
+
+    MODEL_DATA[model] = {
+        "Max_DPI" : int(data[0]),
+        "Max_Polling_Rate" : int(data[1]),
+        "Protocal_Version" : data[2],
+        "Product_ID" : pid,
+    }
+    
+Verified_Supported_PIDs = []
+Untested_PIDs = []
+Partially_Supported_PIDs = []
+Not_Supported_PIDs = []
+
+for model in MODEL_DATA.keys():
+    if MODEL_DATA[model]["Protocal_Version"] == "v2" and MODEL_DATA[model]["Product_ID"] != "?":
+        Verified_Supported_PIDs.append(MODEL_DATA[model]["Product_ID"])
+
+    elif MODEL_DATA[model]["Protocal_Version"] == "v2":
+        Untested_PIDs.append(MODEL_DATA[model]["Product_ID"])
+
+    elif MODEL_DATA[model]["Protocal_Version"] == "v1":
+        Partially_Supported_PIDs.append(MODEL_DATA[model]["Product_ID"])
+
+    elif MODEL_DATA[model]["Protocal_Version"] == "v3":
+        Not_Supported_PIDs.append(MODEL_DATA[model]["Product_ID"])
+
 def get_full_path(relative_path):
     try:
         # PyInstaller temp folder, stores path in _MEIPASS
@@ -17,7 +81,31 @@ def get_full_path(relative_path):
 
     return os.path.join(base_path, relative_path)
     
-def get_startup_data(properties : mouse_hid.properties, callback=None):
+def get_startup_data(properties : mouse_hid.properties):
+
+    Success, ProductID = properties.get.PID()
+
+    if Success == False:
+        is_Supported = "Not"
+
+    if ProductID in Verified_Supported_PIDs:
+        is_Supported = "Verified"
+        Protocal_ver = "v2"
+
+    elif ProductID in Untested_PIDs:
+        is_Supported = "Untested"
+        Protocal_ver = "v2"
+
+    elif ProductID in Partially_Supported_PIDs:
+        is_Supported = "Partial"
+        Protocal_ver = "v1"
+        
+    elif ProductID in Not_Supported_PIDs:
+        is_Supported = "Not"
+        Protocal_ver = "v3"
+
+    if is_Supported == "Not":
+        return is_Supported, Protocal_ver, []
 
     dpi_stage = properties.get.dpi_stage()[1]
     if dpi_stage != 1:
@@ -34,6 +122,7 @@ def get_startup_data(properties : mouse_hid.properties, callback=None):
         "Debounce Time"     : lambda: properties.get.debounce_time()[1],
         "Lift-off Distance" : lambda: properties.get.lift_off_dist()[1],
         "Sleep Timer"       : lambda: properties.get.sleep_time()[1],
+        "PID"               : lambda: properties.get.PID()[1],
 
         "DPI Stage"         : 1
     }
@@ -46,7 +135,7 @@ def get_startup_data(properties : mouse_hid.properties, callback=None):
         data[key] = value()
         time.sleep(0.01)
 
-    return data
+    return is_Supported, Protocal_ver, data
 
 class SplashScreen(ctk.CTkFrame):
     def __init__(self, master, callback):
@@ -117,17 +206,33 @@ class SplashScreen(ctk.CTkFrame):
 
 
         if not self.ConnectingThread.is_alive():
-            device = self.output[0][0] if isinstance(self.output[0], list) else self.output[0]
+            device, product_name = self.output[0][0] if isinstance(self.output[0], list) else self.output[0]
 
             if device is None:
                 self.master.open_error_dialog("No device found", fatal=True)
                 self.master.destroy()
 
             self.DeviceConnected.set(True)
-            properties = mouse_hid.properties(device, 1, debug=DEBUG)
+            orginal_properties = mouse_hid.properties(device, ProfileID=1, debug=DEBUG)
             def get_startup_data_task():
-                data = get_startup_data(properties)
-                self.after(0, lambda: self.callback(properties, data))
+                properties = orginal_properties
+                is_Supported, Protocal_ver, data = get_startup_data(properties)
+
+                if Protocal_ver == "v1":
+                    properties = mouse_hid.properties(device, ProfileID=-1, debug=DEBUG)
+
+                # R6 Mouse 2.4G
+                device_name_l = product_name.split(" ")
+                if device_name_l[1] in mouse_hid.SUFFIX_LIST:
+                    device_name = product_name[0] + product_name[1]
+                else:
+                    device_name = product_name[0]
+
+                for model in MODEL_DATA.keys():
+                    if device_name == model:
+                        break
+
+                self.after(0, lambda: self.callback(properties, data, is_Supported, device_name))
 
             threading.Thread(target=get_startup_data_task, daemon=True).start()
         else:
@@ -135,7 +240,7 @@ class SplashScreen(ctk.CTkFrame):
 
 
 class MainPage(ctk.CTkFrame):
-    def __init__(self, app: ctk.CTk, properties : mouse_hid.properties, data : dict):
+    def __init__(self, app: ctk.CTk, properties : mouse_hid.properties, data : dict, device_name : str, warning_dialog : callable):
         super().__init__(app, corner_radius=14)
         self.app = app
         self.properties = properties
@@ -145,6 +250,11 @@ class MainPage(ctk.CTkFrame):
         self.slider_widgets = {}
         self.is_refreshing = False
         self.CurrentProfile = int(self.properties.get.profile_id()[1])
+        self.warning_screen = warning_dialog
+
+        self.protocal_ver = MODEL_DATA[device_name]["Protocal_Version"]
+        self.DPI_Max = MODEL_DATA[device_name]["Max_DPI"]
+        self.Polling_Rate_Max = MODEL_DATA[device_name]["Max_Polling_Rate"]
         
         # Battery + Firmware Info
         self.create_header()
@@ -161,13 +271,15 @@ class MainPage(ctk.CTkFrame):
             font=ctk.CTkFont(size=18, weight="bold")
         ).grid(row=0, column=0, columnspan=2, padx=10, pady=(0, 15), sticky="w")
 
-        # Profile Switcher
-        ProfileFrame = ctk.CTkFrame(self.controls, corner_radius=10)
-        ProfileFrame.grid(row=0, column=2, padx=10, pady=(0, 15), sticky="e")
-        
-        combobox = ctk.CTkComboBox(ProfileFrame, values=[f"Profile: {i+1}" for i in range(3)], command=self.update_profiles)
-        combobox.grid(row=0, column=2, columnspan=2, sticky="w", padx=(5, 10), pady=5)
-        combobox.set(f"Profile: {self.CurrentProfile}")
+
+        if self.protocal_ver == "v2":
+            # Profile Switcher
+            ProfileFrame = ctk.CTkFrame(self.controls, corner_radius=10)
+            ProfileFrame.grid(row=0, column=2, padx=10, pady=(0, 15), sticky="e")
+            
+            combobox = ctk.CTkComboBox(ProfileFrame, values=[f"Profile: {i+1}" for i in range(3)], command=self.update_profiles)
+            combobox.grid(row=0, column=2, columnspan=2, sticky="w", padx=(5, 10), pady=5)
+            combobox.set(f"Profile: {self.CurrentProfile}")
 
 
         self.create_checkboxes()
@@ -178,7 +290,11 @@ class MainPage(ctk.CTkFrame):
         self.dropdown_frame.grid_columnconfigure(0, weight=1)
 
         # Dropdowns
-        PollingRateOptions = [str(opt) + " Hz" for opt in [125, 250, 500, 1000, 2000, 4000, 8000]]
+        Polling_rate_list = [125, 250, 500, 1000, 2000, 4000, 8000]
+        Max_idx = Polling_rate_list.index(self.Polling_Rate_Max)
+        Polling_rate_list = Polling_rate_list[:Max_idx+1]
+
+        PollingRateOptions = [str(opt) + " Hz" for opt in Polling_rate_list]
         LiftOffDistOptions = [str(opt) + " mm" for opt in [0.7, 1, 2]]
         self.create_dropdowns(0, "Polling Rate", PollingRateOptions)
         self.create_dropdowns(1, "Lift-off Distance", LiftOffDistOptions)
@@ -189,7 +305,7 @@ class MainPage(ctk.CTkFrame):
         self.slider_frame.grid_columnconfigure(0, weight=1)
 
         # Sliders
-        self.create_slider(0, "DPI Level", 50, 42000, 50, "DPI")
+        self.create_slider(0, "DPI Level", 50, self.DPI_Max, 50, "DPI")
         self.create_slider(2, "Debounce Time", 0, 15, 1, "ms")
         self.create_slider(3, "Sleep Timer", 15, 900, 1, "min")
 
@@ -394,7 +510,6 @@ class MainPage(ctk.CTkFrame):
             self.data = data
             ChangePageState("normal")
 
-            # This is below the ChangePageState to allow the entry values to be changed by Tkinker
             self.refresh_entrys(data)
 
             self.sync_btn.configure(text="Settings Synced", state="disabled")
@@ -402,11 +517,8 @@ class MainPage(ctk.CTkFrame):
         def refresh_screen(AssignSettings=True):
             if AssignSettings:
                 assign_settings()
-                #thread = threading.Thread(target=assign_settings, daemon=True)
-                #thread.start()
-                #thread.join()
 
-            data = get_startup_data(self.properties)
+            _, _, data = get_startup_data(self.properties)
             self.after(0, lambda: finish_ui_update(data))
 
         ChangePageState("disabled")

@@ -5,6 +5,27 @@ import sys
 
 DEBUG = False
 
+Polling_rate_map_return = {
+    125 : 8,
+    250 : 4,
+    500 : 2,
+    1000 : 1,
+    2000 : 32,
+    4000 : 64,
+    8000 : 128
+}
+
+Polling_rate_map_send = {
+    8 : 125,
+    4 : 250,
+    2 : 500,
+    1 : 1000,
+    16 : 1000,
+    32 : 2000,
+    64 : 4000,
+    128 : 8000
+}
+
 def send_command(device : hid.Device, packet : bytes, NoGetFeature : bool = False):
     device.send_feature_report(packet)
     if NoGetFeature == False:
@@ -178,18 +199,7 @@ class GET:
         pid = response[10] * 256 + response[11]     
         return Success, pid
     
-    def polling_rate(self):  # NOTE: need to oberseve source code
-        Polling_rates = {
-            8 : 125,
-            4 : 250,
-            2 : 500,
-            1 : 1000,
-            16 : 1000,
-            32 : 2000,
-            64 : 4000,
-            128 : 8000
-        }
-
+    def polling_rate(self):
         packet = protocal_cmd.get_polling_rate(self.profileID)
         Success, response = send_command(self.device, packet)
 
@@ -207,7 +217,7 @@ class GET:
             PollingRateIdx = response[7]
 
         if Success == True and PollingRateIdx != "":
-            PollingRate = Polling_rates[PollingRateIdx]
+            PollingRate = Polling_rate_map_send[PollingRateIdx]
         else:
             PollingRate = None
 
@@ -265,27 +275,32 @@ class SET:
         self.device = dev
 
     def angle_snap(self, enable):
-        Success, _ = send_command(self.device, protocal_cmd.set_angle_snap(enable, self.profileID))
+        packet = protocal_cmd.set_angle_snap(enable, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def debounce_time(self, DebounceTime):
-        Success, _ = send_command(self.device, protocal_cmd.set_debounce(DebounceTime, self.profileID))
+        packet = protocal_cmd.set_debounce(DebounceTime, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def dongle_LED(self, enable):
-        Success, _ = send_command(self.device, protocal_cmd.set_dongle_LED(enable, self.profileID))
+        packet = protocal_cmd.set_dongle_LED(enable, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
-    def dpi_stage_info(self, StageNo, DPIValue): # NOTE: need to finsih this
-        Success, _ = send_command(self.device, protocal_cmd.set_dpi_stage_info(StageNo, DPIValue, self.profileID))
+    def dpi_stage_info(self, StageNo, DPIValue):
+        packet = protocal_cmd.set_dpi_stage_info(StageNo, DPIValue, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def dpi_stage(self, CurrentStage):
-        Success, _ = send_command(self.device, protocal_cmd.set_dpi_stage(self.profileID, CurrentStage))
+        packet = protocal_cmd.set_dpi_stage(self.profileID, CurrentStage)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
@@ -296,51 +311,50 @@ class SET:
         else:
             dist = int(dist)
 
-        Success, _ = send_command(self.device, protocal_cmd.set_lift_off(self.profileID, dist))
+        packet = protocal_cmd.set_lift_off(self.profileID, dist)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
-    def polling_rate(self, PollingRate): 
-        Polling_rates = {
-            125 : 8,
-            250 : 4,
-            500 : 2,
-            1000 : 1,
-            2000 : 32,
-            4000 : 64,
-            8000 : 128
-        }
-        Success, _ = send_command(self.device, protocal_cmd.set_polling_rate(Polling_rates[PollingRate], self.profileID))
+    def polling_rate(self, PollingRateVal): 
+        packet = protocal_cmd.set_polling_rate(Polling_rate_map_return[PollingRateVal], self.profileID)
+        Success, _ = send_command(self.device, packet)
         
         return Success
     
     def motion_sync(self, enable):
-        Success, _ = send_command(self.device, protocal_cmd.set_motion_sync(enable, self.profileID))
+        packet = protocal_cmd.set_motion_sync(enable, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def pairing(self, isPaired):
-        Success, _ = send_command(self.device, protocal_cmd.pair_to_device(isPaired))
+        packet = protocal_cmd.pair_to_device(isPaired)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def ripple_control(self, enable):
-        Success, _ = send_command(self.device, protocal_cmd.set_ripple_contol(enable, self.profileID))
+        packet = protocal_cmd.set_ripple_contol(enable, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def sleep_time(self, Stime):
-        Success, _ = send_command(self.device, protocal_cmd.set_sleep(Stime, self.profileID))
+        packet = protocal_cmd.set_sleep(Stime, self.profileID)
+        Success, _ = send_command(self.device, packet)
 
         return Success
     
     def reset_profile(self):
-        Success, _ = send_command(self.device, protocal_cmd.reset_profile(self.profileID), NoGetFeature=True)
+        packet = protocal_cmd.reset_profile(self.profileID)
+        Success, _ = send_command(self.device, packet, NoGetFeature=True)
 
         return Success
     
     def reset_defaults(self):
-        Success, _ = send_command(self.device, protocal_cmd.reset_defaults(), NoGetFeature=True)
+        packet = protocal_cmd.reset_defaults()
+        Success, _ = send_command(self.device, packet, NoGetFeature=True)
 
         return Success
     

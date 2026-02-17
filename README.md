@@ -11,10 +11,10 @@ This project involves reverse-engineered protocols. Use at your own risk. I am n
 > | Model(s)           | Support Level | Notes                                  |
 > |--------------------|---------------|----------------------------------------|
 > | R6 / R11 Ultra     | 🟢 Supported  | Tested on R6 (Dongle Mode)             |
-> | X6 / X8 / X11      | 🟢 Supported  | Should work out of the box             |
-> | R1 / R5 Ultra      | 🟡 Limited    | GUI may not display correctly          |
-> | X6 / G / A         | 🟡 Limited    | GUI may not display correctly          |
-> | V3 / V6            | 🟡 Limited    | CLI workaround required (Profile -1)   |
+> | X6 / X8 / X11      | 🔴 NOT Supported    | Should work out of the box             |
+> | R1 / R5 Ultra      | 🔴 NOT Supported    | GUI may not display correctly          |
+> | X3 / G / A         | 🔴 NOT Supported    | GUI may not display correctly          |
+> | V3 / V6            | 🔴 NOT Supported    | CLI workaround required (Profile -1)   |
 
 **Check CLI Usage below for more details**
 ---

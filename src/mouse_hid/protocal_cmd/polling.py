@@ -1,13 +1,3 @@
-dicPollingRate = {}
-
-dicPollingRate[8] = 125
-dicPollingRate[4] = 250
-dicPollingRate[2] = 500
-dicPollingRate[1] = 1000
-dicPollingRate[32] = 2000
-dicPollingRate[64] = 4000
-dicPollingRate[128] = 8000
-
 def set_polling_rate(PollingRate, profile_id):
     buf = bytearray(65)
 

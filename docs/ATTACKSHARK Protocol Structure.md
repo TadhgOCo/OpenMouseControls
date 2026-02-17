@@ -1,6 +1,15 @@
 # ATTACKSHARK Protocol Documentation
 
 > [!IMPORTANT]
+> Newer AttackShark mice use an updated protocal (v3) **NOT** documented here.
+> The Newer protocal features many upgrades and is largly different to the ones (v1 and v2) documented here.
+> | v1, v2 | v3 (NOT documented here) |
+> | --------- | --------- |
+> | Sends only one setting at a time | Packs multiple settings at once |
+> | Small payload, one setting in 65 bytes | Encodes payloads into a fixed 56 byte structure |
+> | No bitfields or complex checksum | Includes bitfields and checksum |
+
+> [!TIP]
 > **Core Protocol Concept**
 > **Command IDs are NOT unique.**
 > The firmware identifies a command using these three bytes:

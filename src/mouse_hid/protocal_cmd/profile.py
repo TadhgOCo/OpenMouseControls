@@ -8,6 +8,7 @@ def reset_defaults():
 
 	return bytes(buf)
 
+
 def reset_profile(profile_id):
 	buf = bytearray(65)
 
@@ -17,6 +18,7 @@ def reset_profile(profile_id):
 	buf[7] = profile_id
 
 	return bytes(buf)
+
 
 def get_profile():
 	buf = bytearray(65)
