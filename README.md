@@ -10,11 +10,11 @@ This project involves reverse-engineered protocols. Use at your own risk. I am n
 > [!CAUTION]
 > | Model(s)           | Support Level | Notes                                  |
 > |--------------------|---------------|----------------------------------------|
-> | R6 / R11 Ultra     | 🟢 Supported  | Tested on R6 (Dongle Mode)             |
-> | X6 / X8 / X11      | 🔴 NOT Supported    | Should work out of the box             |
-> | R1 / R5 Ultra      | 🔴 NOT Supported    | GUI may not display correctly          |
-> | X3 / G / A         | 🔴 NOT Supported    | GUI may not display correctly          |
-> | V3 / V6            | 🔴 NOT Supported    | CLI workaround required (Profile -1)   |
+> | R6 / R11 Ultra     | 🟢 Supported        | Tested on R6, Not Tested on R11 Ultra |
+> | X6 / X8 / X11      | 🔴 NOT Supported    |      Uses v3 Protocal            |
+> | R1 / R5 Ultra      | 🔴 NOT Supported    |      Uses v3 Protocal            |
+> | X3 / G / A         | 🔴 NOT Supported    |      Uses v3 Protocal            |
+> | V3 / V6            | 🔴 NOT Supported    |      Uses v3 Protocal            |
 
 **Check CLI Usage below for more details**
 ---
