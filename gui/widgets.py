@@ -222,8 +222,7 @@ class SplashScreen(ctk.CTkFrame):
                     properties = mouse_hid.properties(device, ProfileID=-1, debug=DEBUG)
 
                 # R6 Mouse 2.4G
-                device_name_l = product_name.split(" ")
-                if device_name_l[1] in mouse_hid.SUFFIX_LIST:
+                if product_name[1] in mouse_hid.SUFFIX_LIST:
                     device_name = product_name[0] + product_name[1]
                 else:
                     device_name = product_name[0]
