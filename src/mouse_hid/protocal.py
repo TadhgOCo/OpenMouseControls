@@ -33,7 +33,7 @@ def send_command(device : hid.Device, packet : bytes, NoGetFeature : bool = Fals
         response = device.get_feature_report(0x02, 65)
         if sys.platform == "win32":
             # When running on windows remove the initial byte of overhead
-            response = response[0:]
+            response = response[1:]
 
         if response[0] != 0xA1:
             for _ in range(5):
@@ -44,7 +44,7 @@ def send_command(device : hid.Device, packet : bytes, NoGetFeature : bool = Fals
                     response = device.get_feature_report(0x02, 65)
                     time.sleep(0.06)
 
-                    if sys.platform == "win32": response = response[0:]
+                    if sys.platform == "win32": response = response[1:]
                 else:
                     break
 
@@ -56,7 +56,7 @@ def send_command(device : hid.Device, packet : bytes, NoGetFeature : bool = Fals
                     response = device.get_feature_report(0x02, 65)
                     time.sleep(0.06)
 
-                    if sys.platform == "win32": response = response[0:]
+                    if sys.platform == "win32": response = response[1:]
                 else:
                     break
 

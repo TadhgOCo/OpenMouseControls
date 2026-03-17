@@ -31,4 +31,20 @@ def check_perms():
             return True
         except OSError:
             pass
+
     return False
+
+def check_device():
+    found_matching_vendor = False
+    for d in hid.enumerate():
+        if d["vendor_id"] not in TARGET_VENDORS:
+            continue
+        try:
+            found_matching_vendor = True
+            h = hid.Device(path=d["path"])
+            h.close()
+            return True
+        except OSError:
+            pass
+
+    return found_matching_vendor

@@ -156,7 +156,7 @@ class SplashScreen(ctk.CTkFrame):
         self.img = ctk.CTkImage(
             light_image=img,
             dark_image=img,
-            size=(183, 239),
+            size=(310, 310),
         )
 
         self.img_btn = ctk.CTkButton(
@@ -192,13 +192,16 @@ class SplashScreen(ctk.CTkFrame):
 
     def spin_wait(self, interval=100, setup=False):
         if not setup:
-            if not mouse_hid.check_perms():
-                mouse_hid.install_perms()
-                self.after(interval, None)
-                
+            if mouse_hid.check_device():
                 if not mouse_hid.check_perms():
-                    self.master.open_error_dialog("No Premissions", fatal=True)
-                    self.master.destroy()
+                    mouse_hid.install_perms()
+                    self.after(interval, None)
+                    
+                    if not mouse_hid.check_perms():
+                        self.master.open_error_dialog("No Premissions", fatal=True)
+                        self.master.destroy()
+            else:
+                self.master.open_error_dialog("No Device", fatal=True)
 
             self.output = [None]
             self.ConnectingThread = threading.Thread(target=mouse_hid.find_device, args=(self.output,))

@@ -10,7 +10,8 @@ This project involves reverse-engineered protocols. Use at your own risk. I am n
 > [!CAUTION]
 > | Model(s)           | Support Level | Notes                                  |
 > |--------------------|---------------|----------------------------------------|
-> | R6 / R11 Ultra     | 🟢 Supported        | Tested on R6, Not Tested on R11 Ultra |
+> | R6 / R11 Ultra     | 🟢 Supported        |        Tested on R6              |
+> | R11 Ultra          | 🔴 NOT Supported    |      Uses v3 Protocal            |
 > | X6 / X8 / X11      | 🔴 NOT Supported    |      Uses v3 Protocal            |
 > | R1 / R5 Ultra      | 🔴 NOT Supported    |      Uses v3 Protocal            |
 > | X3 / G / A         | 🔴 NOT Supported    |      Uses v3 Protocal            |
@@ -36,10 +37,7 @@ This project involves reverse-engineered protocols. Use at your own risk. I am n
 ### Known Issues & Limitations:
 We are tracking a few bugs as we head toward a stable v1.0.0.
 
-- **Sync Latency:** When clicking the Sync button, the application may appear to "freeze" for a few seconds (1-2 on Windows, 3-5 on Linux) before the syncing process begins. The app remains functional and will resume normally once the sync ends. A fix for this UI thread blocking is planned for the next update.
-
-- **No Profile Switching:** This feature is planned for the next update.
-- **No Button Reassignment:** This feature is also planned although it is secondary.
+- **No Button Reassignment:** This feature is planned.
 - **No Macro Creation:** This Feature is not currently planned.
 - **No Bluetooth Connectivity:** This Feature is not currently planned.
 ---

@@ -1,12 +1,12 @@
 import os
 import sys
-import traceback
 
 if sys.platform == 'win32':
     # Add the hid_api.dll File
-    dll_path = os.path.dirname(os.path.abspath(__file__))
+    dll_path = os.getcwd()
     os.add_dll_directory(dll_path)
 
+import traceback
 import customtkinter as ctk
 from gui.widgets import MainPage, SplashScreen
 
@@ -60,6 +60,13 @@ i.e There is no reason this program shouldn't work as intended although not all 
 Unsupported features will be greyed out.
 
 Click Exit to Close the program or Continue to resume.
+"""
+
+DEVICE_NOT_FOUND_MESSAGE = """
+No Device was found check you have the mouse in dongle mode and it is plugged in properly, alternativly try plugging the mouse into your
+computer directly, with a USB-C cable.
+
+Also ensure your device is on the supported devices list: https://github.com/TadhgOCo/OpenMouseControls/README.md
 """
 
 ctk.set_appearance_mode("dark")
@@ -199,7 +206,7 @@ class App(ctk.CTk):
                 try:
                     self.quit()
                 finally:
-                    exit(1)
+                    sys.exit(1)
 
         self.fw_window = ctk.CTkToplevel(self)
         self.fw_window.title("OpenMouseControl - ERROR")
@@ -219,7 +226,8 @@ class App(ctk.CTk):
         messages = {
             "No premissions": NO_PREMISSION_MESSAGE,
             "No device found": NO_DEVICE_FOUND_MESSAGE,
-            "Device NOT supported" : DEVICE_NOT_SUPPORTED
+            "Device NOT supported" : DEVICE_NOT_SUPPORTED,
+            "No Device" : DEVICE_NOT_FOUND_MESSAGE
         }
         
         # dict.get(key, default)
@@ -237,7 +245,9 @@ class App(ctk.CTk):
         ).pack(side="bottom", pady=20)
 
 
-        self.fw_window.grab_set()
+        if not fatal:
+            self.fw_window.grab_set()
+
         self.wait_window(self.fw_window)
 
 

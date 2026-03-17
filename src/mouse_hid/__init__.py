@@ -4,7 +4,7 @@ __version__ = "0.1.0"
 
 from .device import find_device, SUFFIX_LIST
 from .protocal import properties
-from .premissions import install_perms, check_perms
+from .premissions import install_perms, check_perms, check_device
 
 __all__ = [
     "find_device",
@@ -13,5 +13,6 @@ __all__ = [
     "properties",
     "install_perms",
     "check_perms",
+    "check_device",
     "SUFFIX_LIST"
 ]
